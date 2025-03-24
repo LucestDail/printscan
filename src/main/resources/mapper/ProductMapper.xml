@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baeksang.printscan.repository.ProductRepository">
+    <insert id="save" parameterType="com.baeksang.printscan.model.Product">
+        INSERT INTO products (id, producer_id, qr_code, produced_at, status)
+        VALUES (#{id}, #{producerId}, #{qrCode}, #{producedAt}, #{status})
+    </insert>
+    
+    <select id="findAll" resultType="com.baeksang.printscan.model.Product">
+        SELECT * FROM products
+    </select>
+    
+    <select id="findById" resultType="com.baeksang.printscan.model.Product">
+        SELECT * FROM products WHERE id = #{id}
+    </select>
+    
+    <delete id="deleteById">
+        DELETE FROM products WHERE id = #{id}
+    </delete>
+</mapper> 
