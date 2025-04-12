@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">ERP System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="active">
+            <div class="sidebar-header">
+                <h3 id="companyName">ERP System</h3>
+            </div>
+
+            <ul class="list-unstyled components">
+                <li class="active">
+                    <a href="#homeSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="mdi mdi-view-dashboard"></i>
+                        <span>대시보드</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#printSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="mdi mdi-printer"></i>
+                        <span>인쇄 관리</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="printSubmenu">
+                        <li><a href="/pages/print/request.html">인쇄 요청</a></li>
+                        <li><a href="/pages/print/status.html">인쇄 현황</a></li>
+                        <li><a href="/pages/print/history.html">인쇄 이력</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#scanSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="mdi mdi-scanner"></i>
+                        <span>스캔 관리</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="scanSubmenu">
+                        <li><a href="/pages/scan/request.html">스캔 요청</a></li>
+                        <li><a href="/pages/scan/status.html">스캔 현황</a></li>
+                        <li><a href="/pages/scan/history.html">스캔 이력</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#qrcodeSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="mdi mdi-qrcode"></i>
+                        <span>QR코드 관리</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="qrcodeSubmenu">
+                        <li><a href="/pages/qrcode/generate.html">QR코드 생성</a></li>
+                        <li><a href="/pages/qrcode/list.html">QR코드 목록</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="/pages/user/management.html">
+                        <i class="mdi mdi-account-group"></i>
+                        <span>사용자 관리</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/pages/report/dashboard.html">
+                        <i class="mdi mdi-file-document"></i>
+                        <span>보고서</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-info">
+                        <i class="mdi mdi-menu"></i>
+                    </button>
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-link dropdown-toggle" type="button" id="notificationDropdown" data-bs-toggle="dropdown">
+                                <i class="mdi mdi-bell"></i>
+                                <span class="badge bg-danger">3</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#">새로운 인쇄 요청</a></li>
+                                <li><a class="dropdown-item" href="#">QR코드 만료 예정</a></li>
+                                <li><a class="dropdown-item" href="#">시스템 업데이트</a></li>
+                            </ul>
+                        </div>
+                        <div class="dropdown ms-3">
+                            <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="mdi mdi-account-circle"></i>
+                                <span>사용자명</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#">프로필</a></li>
+                                <li><a class="dropdown-item" href="#">설정</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">로그아웃</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">대기 중인 인쇄</h5>
+                                <h2 class="card-text">15</h2>
+                                <p class="card-text text-muted">전일 대비 +3</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">처리된 스캔</h5>
+                                <h2 class="card-text">42</h2>
+                                <p class="card-text text-muted">이번 주 누적</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">활성 QR코드</h5>
+                                <h2 class="card-text">28</h2>
+                                <p class="card-text text-muted">만료까지 평균 5일</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">전체 사용자</h5>
+                                <h2 class="card-text">156</h2>
+                                <p class="card-text text-muted">활성 사용자 134</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">작업 처리 현황</h5>
+                                <canvas id="workChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">최근 알림</h5>
+                                <div class="notification-list">
+                                    <div class="notification-item">
+                                        <i class="mdi mdi-printer text-primary"></i>
+                                        <div class="notification-content">
+                                            <p>새로운 인쇄 요청이 등록되었습니다.</p>
+                                            <small class="text-muted">5분 전</small>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <i class="mdi mdi-qrcode text-warning"></i>
+                                        <div class="notification-content">
+                                            <p>QR코드 3개가 곧 만료됩니다.</p>
+                                            <small class="text-muted">1시간 전</small>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <i class="mdi mdi-scanner text-success"></i>
+                                        <div class="notification-content">
+                                            <p>스캔 작업이 완료되었습니다.</p>
+                                            <small class="text-muted">2시간 전</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html> 

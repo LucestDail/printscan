@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스캔 요청 - ERP System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar will be loaded by JavaScript -->
+        <div id="sidebar-container"></div>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Navbar will be loaded by JavaScript -->
+            <div id="navbar-container"></div>
+
+            <div class="container-fluid">
+                <div class="row mb-4">
+                    <div class="col">
+                        <h2>스캔 요청</h2>
+                    </div>
+                </div>
+
+                <!-- 스캔 요청 폼 -->
+                <div class="card">
+                    <div class="card-body">
+                        <form id="scanRequestForm" class="needs-validation" novalidate>
+                            <!-- 기본 정보 -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <h5 class="mb-3">기본 정보</h5>
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">제목 <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="title" required>
+                                        <div class="invalid-feedback">제목을 입력해주세요.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="department" class="form-label">부서 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="department" required>
+                                            <option value="">선택하세요</option>
+                                            <option value="HR">인사팀</option>
+                                            <option value="FINANCE">재무팀</option>
+                                            <option value="SALES">영업팀</option>
+                                            <option value="IT">IT팀</option>
+                                        </select>
+                                        <div class="invalid-feedback">부서를 선택해주세요.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="priority" class="form-label">우선순위 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="priority" required>
+                                            <option value="">선택하세요</option>
+                                            <option value="LOW">낮음</option>
+                                            <option value="MEDIUM">보통</option>
+                                            <option value="HIGH">높음</option>
+                                            <option value="URGENT">긴급</option>
+                                        </select>
+                                        <div class="invalid-feedback">우선순위를 선택해주세요.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="mb-3">스캔 설정</h5>
+                                    <div class="mb-3">
+                                        <label for="resolution" class="form-label">해상도 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="resolution" required>
+                                            <option value="">선택하세요</option>
+                                            <option value="200">200 DPI</option>
+                                            <option value="300">300 DPI</option>
+                                            <option value="600">600 DPI</option>
+                                        </select>
+                                        <div class="invalid-feedback">해상도를 선택해주세요.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="colorMode" class="form-label">컬러 모드 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="colorMode" required>
+                                            <option value="">선택하세요</option>
+                                            <option value="COLOR">컬러</option>
+                                            <option value="GRAYSCALE">흑백(그레이스케일)</option>
+                                            <option value="BW">흑백(이진화)</option>
+                                        </select>
+                                        <div class="invalid-feedback">컬러 모드를 선택해주세요.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fileFormat" class="form-label">파일 형식 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="fileFormat" required>
+                                            <option value="">선택하세요</option>
+                                            <option value="PDF">PDF</option>
+                                            <option value="JPEG">JPEG</option>
+                                            <option value="PNG">PNG</option>
+                                            <option value="TIFF">TIFF</option>
+                                        </select>
+                                        <div class="invalid-feedback">파일 형식을 선택해주세요.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 추가 옵션 -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="mb-3">추가 옵션</h5>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-check mb-2">
+                                                <input type="checkbox" class="form-check-input" id="doubleSided">
+                                                <label class="form-check-label" for="doubleSided">양면 스캔</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check mb-2">
+                                                <input type="checkbox" class="form-check-input" id="autoRotate">
+                                                <label class="form-check-label" for="autoRotate">자동 회전</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check mb-2">
+                                                <input type="checkbox" class="form-check-input" id="autoContrast">
+                                                <label class="form-check-label" for="autoContrast">자동 대비 조정</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 메모 -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="mb-3">메모</h5>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" id="notes" rows="3" placeholder="스캔 작업에 대한 추가 요청사항이나 메모를 입력하세요."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 제출 버튼 -->
+                            <div class="row">
+                                <div class="col-12 text-end">
+                                    <button type="button" class="btn btn-secondary me-2" onclick="history.back()">취소</button>
+                                    <button type="submit" class="btn btn-primary">스캔 요청</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="/js/scan-request.js"></script>
+</body>
+</html> 

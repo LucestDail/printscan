@@ -1,0 +1,55 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <button type="button" id="sidebarCollapse" class="btn btn-info">
+            <i class="mdi mdi-menu"></i>
+        </button>
+        <div class="ms-auto d-flex align-items-center">
+            <div class="dropdown">
+                <button class="btn btn-link dropdown-toggle" type="button" id="notificationDropdown" data-bs-toggle="dropdown">
+                    <i class="mdi mdi-bell"></i>
+                    <span class="badge bg-danger">0</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="notificationList">
+                    <li><div class="dropdown-item text-center text-muted">알림이 없습니다.</div></li>
+                </ul>
+            </div>
+            <div class="dropdown ms-3">
+                <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                    <i class="mdi mdi-account-circle"></i>
+                    <span>사용자</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <a class="dropdown-item" href="/pages/user/profile.html">
+                        <i class="mdi mdi-account me-2"></i> 프로필
+                    </a>
+                    <a class="dropdown-item" href="/pages/user/settings.html">
+                        <i class="mdi mdi-cog me-2"></i> 설정
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" onclick="logout(); return false;">
+                        <i class="mdi mdi-logout me-2"></i> 로그아웃
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 토스트 컨테이너 -->
+<div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1500;"></div>
+
+<!-- 로딩 오버레이 스타일 -->
+<style>
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+</style> 

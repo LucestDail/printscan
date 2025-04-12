@@ -1,26 +1,37 @@
 package com.baeksang.printscan.controller;
 
-import com.baeksang.printscan.model.Product;
+import com.baeksang.printscan.entity.Product;
 import com.baeksang.printscan.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
 
     @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return productService.createProduct(product.getProducerId(), product.getQrCode());
+    public ResponseEntity<Product> createProduct(@RequestParam String producerId, @RequestParam String qrCode) {
+        return ResponseEntity.ok(productService.createProductWithQR(producerId, qrCode));
     }
 
     @GetMapping
-    public List<Product> getAllProducts() {
-        return productService.getAllProducts();
+    public ResponseEntity<List<Product>> getAllProducts() {
+        return ResponseEntity.ok(productService.findProductsByStatus(Product.ProductStatus.CREATED));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProduct(@PathVariable String id) {
+        return ResponseEntity.ok(productService.findProductById(id));
+    }
+
+    @GetMapping("/qr/{qrCode}")
+    public ResponseEntity<Product> getProductByQrCode(@PathVariable String qrCode) {
+        return ResponseEntity.ok(productService.findProductByQrCode(qrCode));
     }
 }

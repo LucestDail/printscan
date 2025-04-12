@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인쇄 이력 - ERP System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar will be loaded by JavaScript -->
+        <div id="sidebar-container"></div>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Navbar will be loaded by JavaScript -->
+            <div id="navbar-container"></div>
+
+            <div class="container-fluid">
+                <div class="row mb-4">
+                    <div class="col">
+                        <h2>인쇄 이력</h2>
+                    </div>
+                </div>
+
+                <!-- 필터 섹션 -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form id="filterForm" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="dateRange" class="form-label">기간</label>
+                                <select class="form-select" id="dateRange">
+                                    <option value="7">최근 7일</option>
+                                    <option value="30">최근 30일</option>
+                                    <option value="90">최근 90일</option>
+                                    <option value="custom">직접 입력</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3" id="customDateRange" style="display: none;">
+                                <label for="startDate" class="form-label">시작일</label>
+                                <input type="date" class="form-control" id="startDate">
+                            </div>
+                            <div class="col-md-3" id="customDateRange2" style="display: none;">
+                                <label for="endDate" class="form-label">종료일</label>
+                                <input type="date" class="form-control" id="endDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="department" class="form-label">부서</label>
+                                <select class="form-select" id="department">
+                                    <option value="">전체</option>
+                                    <option value="HR">인사팀</option>
+                                    <option value="FINANCE">재무팀</option>
+                                    <option value="SALES">영업팀</option>
+                                    <option value="IT">IT팀</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search" class="form-label">검색</label>
+                                <input type="text" class="form-control" id="search" placeholder="제목 또는 요청자">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 통계 섹션 -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">총 인쇄 건수</h5>
+                                <h2 class="card-text" id="totalJobs">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">총 인쇄 매수</h5>
+                                <h2 class="card-text" id="totalPages">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">컬러 인쇄 비율</h5>
+                                <h2 class="card-text" id="colorRatio">0%</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">평균 처리 시간</h5>
+                                <h2 class="card-text" id="avgProcessTime">0분</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 이력 목록 -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>번호</th>
+                                        <th>제목</th>
+                                        <th>부서</th>
+                                        <th>요청자</th>
+                                        <th>매수</th>
+                                        <th>컬러</th>
+                                        <th>요청일시</th>
+                                        <th>완료일시</th>
+                                        <th>소요시간</th>
+                                        <th>상태</th>
+                                        <th>작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyList">
+                                    <!-- 데이터는 JavaScript로 로드됨 -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 페이지네이션 -->
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center" id="pagination">
+                                <!-- 페이지네이션은 JavaScript로 생성됨 -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상세 정보 모달 -->
+    <div class="modal fade" id="jobDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">인쇄 작업 상세 정보</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>제목:</strong> <span id="modalTitle"></span></p>
+                            <p><strong>부서:</strong> <span id="modalDepartment"></span></p>
+                            <p><strong>요청자:</strong> <span id="modalRequester"></span></p>
+                            <p><strong>요청일시:</strong> <span id="modalRequestDate"></span></p>
+                            <p><strong>완료일시:</strong> <span id="modalCompletedDate"></span></p>
+                            <p><strong>소요시간:</strong> <span id="modalProcessTime"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>매수:</strong> <span id="modalCopies"></span></p>
+                            <p><strong>양면 인쇄:</strong> <span id="modalDoubleSided"></span></p>
+                            <p><strong>컬러:</strong> <span id="modalColor"></span></p>
+                            <p><strong>기타 옵션:</strong> <span id="modalOptions"></span></p>
+                            <p><strong>상태:</strong> <span id="modalStatus"></span></p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6>첨부 파일</h6>
+                        <ul class="list-group" id="modalFiles">
+                            <!-- 파일 목록은 JavaScript로 생성됨 -->
+                        </ul>
+                    </div>
+                    <div class="mt-3">
+                        <h6>작업 로그</h6>
+                        <ul class="list-group" id="modalLogs">
+                            <!-- 로그는 JavaScript로 생성됨 -->
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="resubmitBtn">재인쇄</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="/js/print-history.js"></script>
+</body>
+</html> 

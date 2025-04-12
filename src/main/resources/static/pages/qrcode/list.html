@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR 코드 목록 - ERP System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar will be loaded by JavaScript -->
+        <div id="sidebar-container"></div>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Navbar will be loaded by JavaScript -->
+            <div id="navbar-container"></div>
+
+            <div class="container-fluid">
+                <!-- 페이지 헤더 -->
+                <div class="row mb-4">
+                    <div class="col">
+                        <h2>QR 코드 목록</h2>
+                    </div>
+                    <div class="col text-end">
+                        <a href="/pages/qrcode/generate.html" class="btn btn-primary">
+                            <i class="mdi mdi-qrcode-plus"></i> QR 코드 생성
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 필터 섹션 -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form id="filterForm" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="qrType" class="form-label">QR 코드 유형</label>
+                                <select class="form-select" id="qrType">
+                                    <option value="">전체</option>
+                                    <option value="URL">URL</option>
+                                    <option value="TEXT">텍스트</option>
+                                    <option value="WIFI">Wi-Fi 설정</option>
+                                    <option value="VCARD">연락처</option>
+                                    <option value="EMAIL">이메일</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="creator" class="form-label">생성자</label>
+                                <input type="text" class="form-control" id="creator" placeholder="생성자 검색">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="dateRange" class="form-label">생성일자</label>
+                                <div class="input-group">
+                                    <input type="date" class="form-control" id="startDate">
+                                    <span class="input-group-text">~</span>
+                                    <input type="date" class="form-control" id="endDate">
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="mdi mdi-filter"></i> 필터 적용
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- QR 코드 목록 -->
+                <div class="row" id="qrCodeList">
+                    <!-- QR 코드 카드 템플릿 -->
+                    <template id="qrCodeTemplate">
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <img src="" alt="QR 코드" class="img-fluid qr-image">
+                                        </div>
+                                        <div class="col-8">
+                                            <h5 class="card-title qr-title"></h5>
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    <i class="mdi mdi-account"></i> <span class="qr-creator"></span><br>
+                                                    <i class="mdi mdi-calendar"></i> <span class="qr-date"></span><br>
+                                                    <i class="mdi mdi-tag"></i> <span class="qr-type"></span>
+                                                </small>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group w-100">
+                                        <button type="button" class="btn btn-outline-primary btn-download-png">
+                                            <i class="mdi mdi-download"></i> PNG
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-download-svg">
+                                            <i class="mdi mdi-download"></i> SVG
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-delete">
+                                            <i class="mdi mdi-delete"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- 페이지네이션 -->
+                <nav aria-label="QR 코드 목록 페이지네이션">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">이전</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">다음</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR 코드 삭제 확인 모달 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">QR 코드 삭제</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>선택한 QR 코드를 삭제하시겠습니까?</p>
+                    <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">삭제</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="/js/qr-list.js"></script>
+</body>
+</html> 

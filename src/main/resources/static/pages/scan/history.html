@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스캔 이력 - ERP System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar will be loaded by JavaScript -->
+        <div id="sidebar-container"></div>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Navbar will be loaded by JavaScript -->
+            <div id="navbar-container"></div>
+
+            <div class="container-fluid">
+                <!-- 페이지 헤더 -->
+                <div class="row mb-4">
+                    <div class="col">
+                        <h2>스캔 이력</h2>
+                    </div>
+                </div>
+
+                <!-- 필터 -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form id="filterForm" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="dateRange" class="form-label">기간</label>
+                                <select class="form-select" id="dateRange">
+                                    <option value="7">최근 7일</option>
+                                    <option value="30">최근 30일</option>
+                                    <option value="90">최근 90일</option>
+                                    <option value="custom">직접 입력</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3" id="customDateRange" style="display: none;">
+                                <label for="startDate" class="form-label">시작일</label>
+                                <input type="date" class="form-control" id="startDate">
+                            </div>
+                            <div class="col-md-3" id="customDateRange2" style="display: none;">
+                                <label for="endDate" class="form-label">종료일</label>
+                                <input type="date" class="form-control" id="endDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="department" class="form-label">부서</label>
+                                <select class="form-select" id="department">
+                                    <option value="">전체</option>
+                                    <option value="HR">인사팀</option>
+                                    <option value="FINANCE">재무팀</option>
+                                    <option value="SALES">영업팀</option>
+                                    <option value="IT">IT팀</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search" class="form-label">검색</label>
+                                <input type="text" class="form-control" id="search" placeholder="제목 검색">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 통계 -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3">총 스캔 작업</h6>
+                                <h3 class="mb-0" id="totalJobs">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3">총 스캔 페이지</h6>
+                                <h3 class="mb-0" id="totalPages">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3">컬러 스캔 비율</h6>
+                                <h3 class="mb-0" id="colorRatio">0%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3">평균 처리 시간</h6>
+                                <h3 class="mb-0" id="avgProcessTime">0분</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 스캔 이력 목록 -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>번호</th>
+                                        <th>제목</th>
+                                        <th>부서</th>
+                                        <th>요청자</th>
+                                        <th>컬러</th>
+                                        <th>페이지 수</th>
+                                        <th>요청일시</th>
+                                        <th>완료일시</th>
+                                        <th>처리시간</th>
+                                        <th>상태</th>
+                                        <th>작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyList">
+                                    <tr>
+                                        <td colspan="11" class="text-center">로딩 중...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 페이지네이션 -->
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center" id="pagination"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상세 정보 모달 -->
+    <div class="modal fade" id="scanDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">스캔 작업 상세</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="35%">부서</th>
+                                    <td id="modalDepartment"></td>
+                                </tr>
+                                <tr>
+                                    <th>요청자</th>
+                                    <td id="modalRequester"></td>
+                                </tr>
+                                <tr>
+                                    <th>요청일시</th>
+                                    <td id="modalRequestDate"></td>
+                                </tr>
+                                <tr>
+                                    <th>완료일시</th>
+                                    <td id="modalCompletedDate"></td>
+                                </tr>
+                                <tr>
+                                    <th>처리시간</th>
+                                    <td id="modalProcessTime"></td>
+                                </tr>
+                                <tr>
+                                    <th>상태</th>
+                                    <td id="modalStatus"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>스캔 설정</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th width="35%">해상도</th>
+                                    <td id="modalResolution"></td>
+                                </tr>
+                                <tr>
+                                    <th>컬러 모드</th>
+                                    <td id="modalColorMode"></td>
+                                </tr>
+                                <tr>
+                                    <th>파일 형식</th>
+                                    <td id="modalFileFormat"></td>
+                                </tr>
+                                <tr>
+                                    <th>양면 스캔</th>
+                                    <td id="modalDoubleSided"></td>
+                                </tr>
+                                <tr>
+                                    <th>추가 옵션</th>
+                                    <td id="modalOptions"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 스캔 파일 -->
+                    <div class="mb-4">
+                        <h6>스캔 파일</h6>
+                        <ul class="list-group" id="modalFiles">
+                            <li class="list-group-item text-center text-muted">스캔 파일이 없습니다.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 작업 로그 -->
+                    <div>
+                        <h6>작업 로그</h6>
+                        <ul class="list-group" id="modalLogs">
+                            <li class="list-group-item text-center text-muted">작업 로그가 없습니다.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary me-2" id="resubmitBtn">재스캔</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="/js/scan-history.js"></script>
+</body>
+</html> 

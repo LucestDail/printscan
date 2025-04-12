@@ -1,0 +1,103 @@
+<nav id="sidebar" class="active">
+    <div class="sidebar-header">
+        <h3 id="companyName">ERP System</h3>
+    </div>
+
+    <div class="position-sticky">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/">
+                    <i class="mdi mdi-home me-2"></i> 대시보드
+                </a>
+            </li>
+            
+            <!-- 인쇄 관리 -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#printMenu">
+                    <i class="mdi mdi-printer me-2"></i> 인쇄 관리
+                    <i class="mdi mdi-chevron-down float-end"></i>
+                </a>
+                <div class="collapse" id="printMenu">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/print/request.html">인쇄 요청</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/print/status.html">인쇄 현황</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/print/history.html">인쇄 이력</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- 스캔 관리 -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#scanMenu">
+                    <i class="mdi mdi-scanner me-2"></i> 스캔 관리
+                    <i class="mdi mdi-chevron-down float-end"></i>
+                </a>
+                <div class="collapse" id="scanMenu">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/scan/request.html">스캔 요청</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/scan/status.html">스캔 현황</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/scan/history.html">스캔 이력</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- QR코드 관리 -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#qrcodeMenu">
+                    <i class="mdi mdi-qrcode me-2"></i> QR코드 관리
+                    <i class="mdi mdi-chevron-down float-end"></i>
+                </a>
+                <div class="collapse" id="qrcodeMenu">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/qrcode/generate.html">QR코드 생성</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/qrcode/list.html">QR코드 목록</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- 사용자 관리 -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#userMenu">
+                    <i class="mdi mdi-account-group me-2"></i> 사용자 관리
+                    <i class="mdi mdi-chevron-down float-end"></i>
+                </a>
+                <div class="collapse" id="userMenu">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/user/profile.html">프로필</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/user/settings.html">설정</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pages/user/management.html">사용자 관리</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- 리포트 -->
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/report/dashboard.html">
+                    <i class="mdi mdi-chart-bar me-2"></i> 리포트
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav> 
