@@ -109,6 +109,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/css/**", "/js/**", "/images/**", "/components/**", "/pages/**", "/favicon.ico").permitAll()
                 .requestMatchers("/login.html").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/print/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
