@@ -110,6 +110,7 @@ public class SecurityConfig {
                 .requestMatchers("/login.html").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/print/**").permitAll()
+                .requestMatchers("/api/labels/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
