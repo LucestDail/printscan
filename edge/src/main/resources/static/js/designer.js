@@ -195,7 +195,19 @@ function collectVariables() { const o = {}; document.querySelectorAll('.var-inpu
 function req() {
   return { id: currentId, name: $('name').value, widthMm: labelW(), heightMm: labelH(),
            dpi: parseInt($('dpi').value) || 203, elementsJson: JSON.stringify(elements),
-           variables: collectVariables(), copies: parseInt($('copies').value) || 1 };
+           variables: collectVariables(), copies: parseInt($('copies').value) || 1,
+           operator: $('operator') ? $('operator').value : null };
+}
+
+async function doBatch() {
+  const body = { ...req(),
+    seqVar: $('bSeqVar').value || 'code', prefix: $('bPrefix').value || '',
+    start: parseInt($('bStart').value) || 1, count: parseInt($('bCount').value) || 1,
+    pad: parseInt($('bPad').value) || 0 };
+  try {
+    const res = await fetch('/api/labels/print-batch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const msg = await res.text(); toast(res.ok ? msg : ('배치 실패: ' + msg));
+  } catch (e) { toast('배치 오류: ' + e.message); }
 }
 
 function schedulePreview() { clearTimeout(previewTimer); previewTimer = setTimeout(doPreview, 350); }
@@ -271,6 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnApplyJson').addEventListener('click', applyJson);
   $('btnPrint').addEventListener('click', doPrint);
   $('btnPrint2').addEventListener('click', doPrint);
+  $('btnBatch').addEventListener('click', doBatch);
   $('btnSave').addEventListener('click', saveTemplate);
   $('btnDelete').addEventListener('click', deleteTemplate);
   $('tplSelect').addEventListener('change', e => loadTemplate(e.target.value));

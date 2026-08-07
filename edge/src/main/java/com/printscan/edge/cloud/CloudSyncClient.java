@@ -1,13 +1,17 @@
 package com.printscan.edge.cloud;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.printscan.edge.config.LineProperties;
 import com.printscan.edge.config.PrinterProperties;
+import com.printscan.edge.inventory.InventoryMovement;
 import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.inventory.Product;
 import com.printscan.edge.label.LabelService;
 import com.printscan.edge.label.RenderRequest;
+import com.printscan.edge.label.SerialSpec;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -29,6 +33,7 @@ public class CloudSyncClient {
     private final LabelService labelService;
     private final InventoryService inventory;
     private final PrinterProperties printer;
+    private final LineProperties line;
     private final ObjectMapper mapper = new ObjectMapper();
     private final RestClient http;
 
@@ -36,12 +41,14 @@ public class CloudSyncClient {
     private volatile Long deviceId;
 
     public CloudSyncClient(CloudSyncProperties props, DeviceIdentityRepository identityRepo,
-                           LabelService labelService, InventoryService inventory, PrinterProperties printer) {
+                           LabelService labelService, InventoryService inventory,
+                           PrinterProperties printer, LineProperties line) {
         this.props = props;
         this.identityRepo = identityRepo;
         this.labelService = labelService;
         this.inventory = inventory;
         this.printer = printer;
+        this.line = line;
         this.http = RestClient.builder().baseUrl(props.getBaseUrl()).build();
     }
 
@@ -57,7 +64,7 @@ public class CloudSyncClient {
         try {
             Map<?, ?> res = http.post().uri("/api/device/register")
                     .body(Map.of("orgApiKey", props.getOrgApiKey(), "name", props.getDeviceName(),
-                            "printerMode", printer.getMode()))
+                            "printerMode", printer.getMode(), "line", line.getName()))
                     .retrieve().body(Map.class);
             if (res != null && res.get("deviceToken") != null) {
                 token = String.valueOf(res.get("deviceToken"));
@@ -83,15 +90,27 @@ public class CloudSyncClient {
             Long jobId = ((Number) job.get("id")).longValue();
             boolean ok = true; String msg = "printed";
             try {
-                RenderRequest req = new RenderRequest(
+                int serialCount = job.get("serialCount") != null ? ((Number) job.get("serialCount")).intValue() : 0;
+                RenderRequest base = new RenderRequest(
                         null, "cloud-job",
                         num(job.get("widthMm")), num(job.get("heightMm")),
                         job.get("dpi") != null ? ((Number) job.get("dpi")).intValue() : null,
                         (String) job.get("elementsJson"),
                         parseVars((String) job.get("variablesJson")),
-                        job.get("copies") != null ? ((Number) job.get("copies")).intValue() : 1);
-                labelService.print(req);
-                log.info("[cloud-sync] 네트워크 출력 잡 {} 인쇄 완료", jobId);
+                        job.get("copies") != null ? ((Number) job.get("copies")).intValue() : 1,
+                        "cloud");
+                if (serialCount > 1) {
+                    SerialSpec spec = new SerialSpec(
+                            (String) job.get("seqVar"), (String) job.get("serialPrefix"),
+                            job.get("serialStart") != null ? ((Number) job.get("serialStart")).intValue() : 1,
+                            serialCount,
+                            job.get("serialPad") != null ? ((Number) job.get("serialPad")).intValue() : 0);
+                    labelService.printBatch(base, spec);
+                    log.info("[cloud-sync] 네트워크 배치 출력 잡 {} ({}장) 완료", jobId, serialCount);
+                } else {
+                    labelService.print(base);
+                    log.info("[cloud-sync] 네트워크 출력 잡 {} 인쇄 완료", jobId);
+                }
             } catch (Exception e) {
                 ok = false; msg = e.getMessage();
                 log.warn("[cloud-sync] 잡 {} 인쇄 실패: {}", jobId, msg);
@@ -113,10 +132,31 @@ public class CloudSyncClient {
             List<Map<String, Object>> inv = inventory.findAll().stream().map(this::snap).collect(Collectors.toList());
             http.post().uri("/api/device/heartbeat")
                     .header("X-Device-Token", token)
-                    .body(Map.of("printerMode", printer.getMode(), "inventory", inv))
+                    .body(Map.of("printerMode", printer.getMode(), "line", line.getName(), "inventory", inv))
                     .retrieve().toBodilessEntity();
         } catch (Exception e) {
             log.debug("[cloud-sync] 하트비트 스킵: {}", e.getMessage());
+        }
+    }
+
+    /** 소비(인쇄 자동출고 등 OUT) 발생 시 허브로 업싱크 → 라인/작업자별 집계. */
+    @EventListener
+    public void onMoved(InventoryService.InventoryMovedEvent ev) {
+        if (!props.isEnabled() || token == null) return;
+        InventoryMovement m = ev.movement();
+        if (m.getType() != InventoryMovement.Type.OUT) return;
+        try {
+            http.post().uri("/api/device/consume")
+                    .header("X-Device-Token", token)
+                    .body(Map.of(
+                            "code", m.getCode(),
+                            "qty", Math.abs(m.getDelta()),
+                            "operator", m.getOperator() == null ? "" : m.getOperator(),
+                            "line", m.getLine() == null ? line.getName() : m.getLine(),
+                            "fromPrint", Boolean.TRUE.equals(m.getFromPrint())))
+                    .retrieve().toBodilessEntity();
+        } catch (Exception e) {
+            log.debug("[cloud-sync] 소비 업싱크 스킵: {}", e.getMessage());
         }
     }
 

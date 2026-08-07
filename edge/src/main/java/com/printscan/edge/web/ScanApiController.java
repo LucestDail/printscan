@@ -1,5 +1,6 @@
 package com.printscan.edge.web;
 
+import com.printscan.edge.config.LineProperties;
 import com.printscan.edge.inventory.InventoryMovement;
 import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.inventory.Product;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class ScanApiController {
 
     private final InventoryService service;
+    private final LineProperties lineProps;
 
     // ── 제품 ──
     @GetMapping("/products")
@@ -47,7 +49,8 @@ public class ScanApiController {
     public ResponseEntity<?> move(@RequestBody MoveRequest req) {
         try {
             InventoryMovement.Type t = InventoryMovement.Type.valueOf(req.type().toUpperCase());
-            InventoryMovement m = service.move(req.code().trim(), t, req.qty(), req.note());
+            InventoryMovement m = service.move(req.code().trim(), t, req.qty(),
+                    req.note(), req.operator(), lineProps.getName(), false);
             return ResponseEntity.ok(m);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -59,5 +62,5 @@ public class ScanApiController {
         return service.history(limit);
     }
 
-    public record MoveRequest(String code, String type, int qty, String note) {}
+    public record MoveRequest(String code, String type, int qty, String note, String operator) {}
 }

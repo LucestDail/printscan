@@ -1,0 +1,17 @@
+[Unit]
+Description=printscan hub (통합 관리 — 온프렘 MAIN)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=printscan
+WorkingDirectory=/opt/printscan-cloud
+EnvironmentFile=-/opt/printscan-cloud/hub.env
+ExecStart=/usr/bin/java -jar /opt/printscan-cloud/app.jar --server.port=8092
+Restart=always
+RestartSec=5
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target

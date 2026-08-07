@@ -13,5 +13,6 @@ public record RenderRequest(
         Integer dpi,
         String elementsJson,
         Map<String, String> variables,
-        Integer copies
+        Integer copies,
+        String operator   // 인쇄=자동출고 시 소비 귀속(작업자). null 허용.
 ) {}

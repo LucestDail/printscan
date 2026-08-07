@@ -3,12 +3,14 @@ package com.printscan.edge.web;
 import com.printscan.edge.label.LabelService;
 import com.printscan.edge.label.LabelTemplate;
 import com.printscan.edge.label.RenderRequest;
+import com.printscan.edge.label.SerialSpec;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /** 라벨 REST — 템플릿 CRUD + 래스터 미리보기(PNG) + 인쇄(^GFA). */
 @RestController
@@ -58,4 +60,22 @@ public class LabelApiController {
             return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
         }
     }
+
+    /** 일련번호 자동증가 배치 인쇄. */
+    @PostMapping("/print-batch")
+    public ResponseEntity<String> printBatch(@RequestBody BatchRequest b) {
+        try {
+            RenderRequest base = new RenderRequest(b.id(), b.name(), b.widthMm(), b.heightMm(), b.dpi(),
+                    b.elementsJson(), b.variables(), 1, b.operator());
+            SerialSpec spec = new SerialSpec(b.seqVar(), b.prefix(), b.start(), b.count(), b.pad());
+            service.printBatch(base, spec);
+            return ResponseEntity.ok(b.count() + "장 배치 출력 완료 (" + spec.format(0) + "~" + spec.format(b.count() - 1) + ")");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
+        }
+    }
+
+    public record BatchRequest(Long id, String name, Double widthMm, Double heightMm, Integer dpi,
+                               String elementsJson, Map<String, String> variables, String operator,
+                               String seqVar, String prefix, int start, int count, int pad) {}
 }

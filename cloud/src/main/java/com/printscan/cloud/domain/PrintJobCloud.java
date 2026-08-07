@@ -35,6 +35,13 @@ public class PrintJobCloud {
     private String variablesJson;
     private int copies = 1;
 
+    // 일련번호 배치(있으면 edge 가 batch 인쇄). serialCount>1 → 배치.
+    private String seqVar;
+    private String serialPrefix;
+    private Integer serialStart;
+    private Integer serialCount;
+    private Integer serialPad;
+
     private String message;
     private LocalDateTime createdAt;
     private LocalDateTime sentAt;

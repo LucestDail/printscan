@@ -58,7 +58,16 @@
     <div>
       <div class="card">
         <h3>디바이스</h3>
-        <table><thead><tr><th>상태</th><th>ID</th><th>이름</th><th>mode</th><th>인쇄수</th><th>최근접속</th></tr></thead><tbody id="devBody"></tbody></table>
+        <table><thead><tr><th>상태</th><th>ID</th><th>이름</th><th>라인</th><th>mode</th><th>인쇄수</th><th>최근접속</th></tr></thead><tbody id="devBody"></tbody></table>
+      </div>
+      <div class="card">
+        <h3>소비(출고) 집계 <span class="muted">인쇄=자동 출고</span></h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);">
+          <div><div class="muted" style="margin-bottom:4px;">라인별</div><table><tbody id="cByLine"></tbody></table></div>
+          <div><div class="muted" style="margin-bottom:4px;">작업자별</div><table><tbody id="cByOp"></tbody></table></div>
+          <div><div class="muted" style="margin-bottom:4px;">제품별</div><table><tbody id="cByProd"></tbody></table></div>
+        </div>
+        <div class="muted" style="margin-top:6px;">총 소비: <b id="cTotal">0</b></div>
       </div>
       <div class="card">
         <h3>재고(디바이스 업싱크)</h3>
@@ -88,6 +97,16 @@
           <input id="npCode" placeholder="code" value="NET-0001">
         </div>
         <label>매수</label><input id="npCopies" type="number" value="1" min="1">
+        <div style="border-top:1px solid var(--color-hairline);margin:var(--space-sm) 0;padding-top:var(--space-sm);">
+          <label>일련번호 배치 (개수 2↑ 시 배치)</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px;">
+            <input id="npSeqVar" placeholder="변수" value="code">
+            <input id="npPrefix" placeholder="접두" value="NET-">
+            <input id="npStart" type="number" placeholder="시작" value="1">
+            <input id="npCount" type="number" placeholder="개수" value="1">
+            <input id="npPad" type="number" placeholder="자리" value="4">
+          </div>
+        </div>
         <button class="btn btn-primary" id="btnNetPrint" style="margin-top:var(--space-sm);width:100%;">이 디바이스로 인쇄</button>
         <div class="muted" style="margin-top:6px;">지시 → 디바이스가 폴링해 로컬 인쇄 → 결과 집계 반영.</div>
       </div>

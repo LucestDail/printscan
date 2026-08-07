@@ -1,0 +1,33 @@
+# 라즈베리파이 유닛 설치 (edge)
+
+라인당 유닛 = **라즈베리파이(3D프린팅 케이스) + Zebra 프린터(USB)**. Pi 리눅스가 edge 앱을 상주 구동.
+
+## 하드웨어
+- Zebra(예: ZD421) **USB-B** → 라즈베리파이 **USB-A(host)** 케이블.
+- Pi 를 공장 유선 네트워크에 연결.
+
+## 설치 (자동)
+```bash
+# 1) edge fat jar 를 Pi 로 복사 (개발 PC에서)
+#    ./mvnw -f edge/pom.xml clean package -DskipTests  → edge/target/printscan-edge-*.jar
+scp edge/target/printscan-edge-0.0.1-SNAPSHOT.jar pi@<PI_IP>:/tmp/app.jar
+scp -r deploy pi@<PI_IP>:/tmp/deploy
+
+# 2) Pi 에서 설치 스크립트 (java17+cups+한글폰트+raw큐+systemd 자동)
+sudo bash /tmp/deploy/install-edge.sh /tmp/app.jar USB
+
+# 3) 라인명/허브주소 설정
+sudo nano /opt/printscan-edge/edge.env      # PRINTSCAN_LINE_NAME, PRINTSCAN_CLOUD_BASE_URL 등
+sudo systemctl restart printscan-edge
+```
+
+## 확인
+- 로컬 UI: `http://<PI_IP>:8091/` (디자이너/스캔)
+- 서비스: `systemctl status printscan-edge`, 로그 `journalctl -u printscan-edge -f`
+- 프린터 스모크: `printf '^XA^FO40,40^A0N,40,40^FDHELLO^FS^XZ' | lp -d zebra -o raw`
+- 부팅 자동 상주 + 크래시 자동재시작(systemd Restart=always).
+
+## 트러블슈팅
+- 한글 안 나옴 → `fc-list | grep -i "CJK KR"` 확인, 없으면 `sudo apt install fonts-noto-cjk`.
+- 인쇄 안 됨 → 유저 `printscan` 이 `lp` 그룹인지(`id printscan`), CUPS 큐 `lpstat -p zebra`.
+- QR/치수 잘림 → 라벨 실측 후 디자이너에서 폭/높이(mm) 조정(미리보기=인쇄물).

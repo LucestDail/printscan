@@ -18,6 +18,7 @@ public class Device {
 
     private Long orgId;
     private String name;
+    private String line;   // 담당 생산 라인
 
     @Column(unique = true)
     private String deviceToken;

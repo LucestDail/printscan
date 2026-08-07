@@ -1,5 +1,7 @@
 package com.printscan.edge.label;
 
+import com.printscan.edge.config.LineProperties;
+import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.label.raster.LabelRasterizer;
 import com.printscan.edge.label.raster.ZplGraphicEncoder;
 import com.printscan.edge.print.PrintService;
@@ -11,8 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 라벨 템플릿 CRUD + 래스터 미리보기(PNG) + 인쇄(^GFA). 미리보기와 인쇄가 동일 렌더라 화면=인쇄물.
@@ -25,6 +29,8 @@ public class LabelService {
     private final LabelTemplateRepository repository;
     private final LabelRasterizer rasterizer;
     private final PrintService printService;
+    private final InventoryService inventory;
+    private final LineProperties lineProps;
 
     // ── CRUD ──────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -77,13 +83,48 @@ public class LabelService {
         }
     }
 
-    /** 실제 인쇄: 렌더 → ^GFA → 활성 transport 전송. */
+    /** 실제 인쇄: 렌더 → ^GFA → 활성 transport 전송 → 제품코드면 자동 출고(소비 추적). */
     public void print(RenderRequest req) throws Exception {
-        BufferedImage img = render(req);
         int copies = (req.copies() != null && req.copies() > 0) ? req.copies() : 1;
+        renderAndSend(req, copies);
+        consume(req.variables(), copies, req.operator());
+    }
+
+    /** 일련번호 배치 인쇄: seqVar 를 증가시키며 count 장 연속 출력. 소비는 고정 제품코드×count. */
+    public void printBatch(RenderRequest base, SerialSpec spec) throws Exception {
+        int count = Math.max(1, spec.count());
+        for (int i = 0; i < count; i++) {
+            Map<String, String> vars = new java.util.LinkedHashMap<>(
+                    base.variables() == null ? Map.of() : base.variables());
+            vars.put(spec.var(), spec.format(i));
+            RenderRequest r = new RenderRequest(base.id(), base.name(), base.widthMm(), base.heightMm(),
+                    base.dpi(), base.elementsJson(), vars, 1, base.operator());
+            renderAndSend(r, 1);
+        }
+        log.info("[label] 배치 인쇄 {}장: {}~{}", count, spec.format(0), spec.format(count - 1));
+        // 배치 소비: 고정 변수(제품코드 등)를 count 만큼. seq 값은 제품이 아니므로 no-op.
+        consume(base.variables(), count, base.operator());
+    }
+
+    private void renderAndSend(RenderRequest req, int copies) throws Exception {
+        BufferedImage img = render(req);
         String zpl = ZplGraphicEncoder.wrapLabel(img, copies);
         printService.print(zpl);
         log.info("[label] 인쇄: {}x{}px copies={}", img.getWidth(), img.getHeight(), copies);
+    }
+
+    /** 인쇄=자동 출고: 변수값 중 등록 제품코드를 qty 만큼 OUT(라인/작업자 귀속). */
+    private void consume(Map<String, String> variables, int qty, String operator) {
+        if (variables == null) return;
+        Set<String> codes = new LinkedHashSet<>(variables.values());
+        for (String code : codes) {
+            if (code == null || code.isBlank()) continue;
+            try {
+                inventory.consumeForPrint(code, qty, operator, lineProps.getName());
+            } catch (Exception e) {
+                log.warn("[label] 자동출고 스킵({}): {}", code, e.getMessage());
+            }
+        }
     }
 
     private LabelTemplate inline(RenderRequest req) {

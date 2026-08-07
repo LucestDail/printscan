@@ -29,6 +29,10 @@ public class InventoryMovement {
     private int resultQty;    // 변동 후 재고
     private String note;
 
+    private String operator;   // 작업자(소비 귀속)
+    private String line;       // 생산 라인
+    private Boolean fromPrint; // 인쇄로 인한 자동 출고 여부(nullable — 기존행 호환)
+
     private LocalDateTime at;
 
     @PrePersist void onCreate() { if (at == null) at = LocalDateTime.now(); }

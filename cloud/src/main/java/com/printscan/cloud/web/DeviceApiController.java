@@ -22,7 +22,7 @@ public class DeviceApiController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
         try {
-            Device d = fleet.register(body.get("orgApiKey"), body.get("name"), body.get("printerMode"));
+            Device d = fleet.register(body.get("orgApiKey"), body.get("name"), body.get("printerMode"), body.get("line"));
             return ResponseEntity.ok(Map.of("deviceId", d.getId(), "deviceToken", d.getDeviceToken()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -49,7 +49,19 @@ public class DeviceApiController {
     @SuppressWarnings("unchecked")
     public ResponseEntity<Void> heartbeat(@RequestHeader(H) String token, @RequestBody Map<String, Object> body) {
         Device d = fleet.authDevice(token);
-        fleet.heartbeat(d, (String) body.get("printerMode"), (List<Map<String, Object>>) body.get("inventory"));
+        fleet.heartbeat(d, (String) body.get("printerMode"), (String) body.get("line"),
+                (List<Map<String, Object>>) body.get("inventory"));
+        return ResponseEntity.ok().build();
+    }
+
+    /** 소비(출고) 업싱크 — 인쇄 자동출고/수동출고 이벤트. */
+    @PostMapping("/consume")
+    public ResponseEntity<Void> consume(@RequestHeader(H) String token, @RequestBody Map<String, Object> body) {
+        Device d = fleet.authDevice(token);
+        int qty = body.get("qty") == null ? 0 : ((Number) body.get("qty")).intValue();
+        fleet.recordConsumption(d, (String) body.get("code"), qty,
+                (String) body.get("operator"), (String) body.get("line"),
+                Boolean.TRUE.equals(body.get("fromPrint")));
         return ResponseEntity.ok().build();
     }
 }

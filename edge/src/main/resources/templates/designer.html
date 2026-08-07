@@ -106,11 +106,25 @@
 
       <div class="card">
         <h3>인쇄</h3>
-        <div class="row2" style="align-items:flex-end;">
+        <label>작업자(operator)</label><input id="operator" placeholder="예: 홍길동 / 야간조">
+        <div class="row2" style="align-items:flex-end;margin-top:6px;">
           <div style="width:90px;"><label>매수</label><input id="copies" type="number" value="1" min="1"></div>
           <button class="btn btn-primary" id="btnPrint2" style="flex:1;">인쇄</button>
         </div>
         <button class="btn btn-dark-utility" id="btnDelete" style="margin-top:var(--space-xs);width:100%;" disabled>템플릿 삭제</button>
+      </div>
+
+      <div class="card">
+        <h3>일련번호 배치 <span class="muted">연속 자동증가</span></h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label>대상 변수</label><input id="bSeqVar" value="code"></div>
+          <div><label>접두어</label><input id="bPrefix" value="NET-"></div>
+          <div><label>시작</label><input id="bStart" type="number" value="1"></div>
+          <div><label>개수</label><input id="bCount" type="number" value="5"></div>
+          <div><label>자리수(0패딩)</label><input id="bPad" type="number" value="4"></div>
+        </div>
+        <button class="btn btn-primary" id="btnBatch" style="margin-top:var(--space-sm);width:100%;">배치 인쇄</button>
+        <div class="muted" style="margin-top:6px;">대상 변수(예: {{code}})에 접두어+번호를 넣어 N장 연속 출력.</div>
       </div>
     </div>
   </div>

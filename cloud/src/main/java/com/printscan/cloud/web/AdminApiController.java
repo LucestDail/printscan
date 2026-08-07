@@ -30,14 +30,20 @@ public class AdminApiController {
     @GetMapping("/stats")
     public Map<String, Object> stats() { return fleet.stats(); }
 
+    @GetMapping("/consumption")
+    public Map<String, Object> consumption() { return fleet.consumption(); }
+
     /** 네트워크 출력 지시: 특정 디바이스에 라벨 잡 큐잉. */
     @PostMapping("/devices/{id}/print")
     public PrintJobCloud print(@PathVariable Long id, @RequestBody NetworkPrintRequest req) throws Exception {
         String varsJson = req.variables() != null ? mapper.writeValueAsString(req.variables()) : "{}";
         return fleet.enqueuePrint(id, req.widthMm(), req.heightMm(), req.dpi(),
-                req.elementsJson(), varsJson, req.copies() != null ? req.copies() : 1);
+                req.elementsJson(), varsJson, req.copies() != null ? req.copies() : 1,
+                req.seqVar(), req.serialPrefix(), req.serialStart(), req.serialCount(), req.serialPad());
     }
 
     public record NetworkPrintRequest(double widthMm, double heightMm, Integer dpi,
-                                      String elementsJson, Map<String, String> variables, Integer copies) {}
+                                      String elementsJson, Map<String, String> variables, Integer copies,
+                                      String seqVar, String serialPrefix, Integer serialStart,
+                                      Integer serialCount, Integer serialPad) {}
 }

@@ -12,11 +12,12 @@ const DEFAULT_ELEMENTS = JSON.stringify([
 
 async function refresh() {
   try {
-    const [stats, devs, snaps, jobs] = await Promise.all([
+    const [stats, devs, snaps, jobs, consume] = await Promise.all([
       fetch('/api/admin/stats').then(r=>r.json()),
       fetch('/api/admin/devices').then(r=>r.json()),
       fetch('/api/admin/snapshots').then(r=>r.json()),
-      fetch('/api/admin/jobs').then(r=>r.json())
+      fetch('/api/admin/jobs').then(r=>r.json()),
+      fetch('/api/admin/consumption').then(r=>r.json())
     ]);
     $('sDevices').textContent = stats.devices;
     $('sOnline').textContent = stats.online;
@@ -25,8 +26,11 @@ async function refresh() {
 
     $('devBody').innerHTML = devs.map(d => `<tr>
       <td><span class="dot ${d.online?'on':'off'}"></span>${d.online?'온라인':'오프라인'}</td>
-      <td>${d.id}</td><td>${d.name}</td><td>${d.printerMode||'-'}</td><td>${d.printCount}</td>
-      <td class="muted">${fmt(d.lastSeenAt)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">등록된 디바이스 없음</td></tr>';
+      <td>${d.id}</td><td>${d.name}</td><td>${d.line||'-'}</td><td>${d.printerMode||'-'}</td><td>${d.printCount}</td>
+      <td class="muted">${fmt(d.lastSeenAt)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">등록된 디바이스 없음</td></tr>';
+
+    renderMap('cByLine', consume.byLine); renderMap('cByOp', consume.byOperator); renderMap('cByProd', consume.byProduct);
+    $('cTotal').textContent = consume.total || 0;
 
     const sel = $('npDevice'), cur = sel.value;
     sel.innerHTML = devs.map(d=>`<option value="${d.id}">#${d.id} ${d.name}</option>`).join('');
@@ -41,15 +45,23 @@ async function refresh() {
   } catch(e) { /* noop */ }
 }
 function fmt(s){ return s ? String(s).replace('T',' ').slice(5,16) : '-'; }
+function renderMap(id, obj){
+  const rows = Object.entries(obj||{});
+  $(id).innerHTML = rows.length ? rows.map(([k,v])=>`<tr><td>${k}</td><td style="text-align:right;font-weight:600;">${v}</td></tr>`).join('')
+    : '<tr><td class="muted">–</td></tr>';
+}
 
 async function netPrint() {
   const id = $('npDevice').value;
   if (!id) { toast('디바이스를 선택하세요'); return; }
+  const count = parseInt($('npCount').value)||1;
   const body = {
     widthMm: parseFloat($('npW').value), heightMm: parseFloat($('npH').value), dpi: parseInt($('npDpi').value),
     elementsJson: $('npElements').value,
     variables: { name: $('npName').value, code: $('npCode').value },
-    copies: parseInt($('npCopies').value)||1
+    copies: parseInt($('npCopies').value)||1,
+    seqVar: $('npSeqVar').value||'code', serialPrefix: $('npPrefix').value||'',
+    serialStart: parseInt($('npStart').value)||1, serialCount: count, serialPad: parseInt($('npPad').value)||0
   };
   const res = await fetch(`/api/admin/devices/${id}/print`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if (!res.ok) { toast('지시 실패'); return; }

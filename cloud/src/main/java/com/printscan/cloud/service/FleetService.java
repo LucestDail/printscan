@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /** 플릿 관리 핵심 — 디바이스 등록/폴링/ack/하트비트/재고 업싱크 + 네트워크 출력 큐잉/집계. */
 @Slf4j
@@ -21,15 +23,17 @@ public class FleetService {
     private final DeviceRepository devices;
     private final PrintJobRepository jobs;
     private final InventorySnapshotRepository snapshots;
+    private final ConsumptionLogRepository consumptions;
 
     // ── 디바이스 등록(아웃바운드) ──
     @Transactional
-    public Device register(String orgApiKey, String name, String printerMode) {
+    public Device register(String orgApiKey, String name, String printerMode, String line) {
         Organization org = orgs.findByApiKey(orgApiKey)
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 orgApiKey"));
         Device d = new Device();
         d.setOrgId(org.getId());
         d.setName(name != null ? name : "device");
+        d.setLine(line);
         d.setDeviceToken("DEV-" + UUID.randomUUID().toString().replace("-", ""));
         d.setPrinterMode(printerMode);
         d.setLastSeenAt(LocalDateTime.now());
@@ -74,9 +78,10 @@ public class FleetService {
 
     // ── 하트비트 + 재고 업싱크 ──
     @Transactional
-    public void heartbeat(Device d, String printerMode, List<Map<String, Object>> inventory) {
+    public void heartbeat(Device d, String printerMode, String line, List<Map<String, Object>> inventory) {
         d.setLastSeenAt(LocalDateTime.now());
         if (printerMode != null) d.setPrinterMode(printerMode);
+        if (line != null) d.setLine(line);
         devices.save(d);
         if (inventory != null) {
             for (Map<String, Object> row : inventory) {
@@ -96,7 +101,9 @@ public class FleetService {
     // ── 네트워크 출력: 잡 큐잉 ──
     @Transactional
     public PrintJobCloud enqueuePrint(Long deviceId, double widthMm, double heightMm, Integer dpi,
-                                      String elementsJson, String variablesJson, int copies) {
+                                      String elementsJson, String variablesJson, int copies,
+                                      String seqVar, String serialPrefix, Integer serialStart,
+                                      Integer serialCount, Integer serialPad) {
         Device d = devices.findById(deviceId).orElseThrow(() -> new IllegalArgumentException("device 없음"));
         PrintJobCloud job = new PrintJobCloud();
         job.setOrgId(d.getOrgId());
@@ -107,6 +114,11 @@ public class FleetService {
         job.setElementsJson(elementsJson);
         job.setVariablesJson(variablesJson);
         job.setCopies(copies > 0 ? copies : 1);
+        job.setSeqVar(seqVar);
+        job.setSerialPrefix(serialPrefix);
+        job.setSerialStart(serialStart);
+        job.setSerialCount(serialCount);
+        job.setSerialPad(serialPad);
         return jobs.save(job);
     }
 
@@ -119,6 +131,36 @@ public class FleetService {
 
     @Transactional(readOnly = true)
     public List<InventorySnapshot> allSnapshots() { return snapshots.findByOrderByUpdatedAtDesc(); }
+
+    // ── 소비(출고) 업싱크 + 집계 ──
+    @Transactional
+    public void recordConsumption(Device d, String code, int qty, String operator, String line, boolean fromPrint) {
+        ConsumptionLog c = new ConsumptionLog();
+        c.setDeviceId(d.getId());
+        c.setLine(line != null && !line.isBlank() ? line : d.getLine());
+        c.setOperator(operator);
+        c.setCode(code);
+        c.setQty(qty);
+        c.setFromPrint(fromPrint);
+        consumptions.save(c);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> consumption() {
+        List<ConsumptionLog> all = consumptions.findAll();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("byLine", sumBy(all, c -> nz(c.getLine(), "(미지정)")));
+        out.put("byOperator", sumBy(all, c -> nz(c.getOperator(), "(미지정)")));
+        out.put("byProduct", sumBy(all, ConsumptionLog::getCode));
+        out.put("total", all.stream().mapToInt(ConsumptionLog::getQty).sum());
+        return out;
+    }
+
+    private Map<String, Integer> sumBy(List<ConsumptionLog> all, java.util.function.Function<ConsumptionLog, String> key) {
+        return all.stream().collect(Collectors.groupingBy(key, LinkedHashMap::new,
+                Collectors.summingInt(ConsumptionLog::getQty)));
+    }
+    private String nz(String s, String def) { return (s == null || s.isBlank()) ? def : s; }
 
     @Transactional(readOnly = true)
     public Map<String, Object> stats() {

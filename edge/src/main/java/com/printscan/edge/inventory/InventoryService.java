@@ -49,6 +49,12 @@ public class InventoryService {
     // ── 입출고 ──────────────────────────────
     @Transactional
     public InventoryMovement move(String code, InventoryMovement.Type type, int qty, String note) {
+        return move(code, type, qty, note, null, null, false);
+    }
+
+    @Transactional
+    public InventoryMovement move(String code, InventoryMovement.Type type, int qty, String note,
+                                  String operator, String line, boolean fromPrint) {
         Product p = byCode(code);
         int delta = switch (type) {
             case IN -> Math.abs(qty);
@@ -62,6 +68,31 @@ public class InventoryService {
         p.setQuantity(result);
         products.save(p);
 
+        InventoryMovement m = record(p, type, applied, result, note, operator, line, fromPrint);
+        log.info("[inventory] {} {} {} → {} (op={}, line={})", type, p.getCode(), applied, result, operator, line);
+        return m;
+    }
+
+    /**
+     * 인쇄=자동 출고. 제품이 등록돼 있으면 인쇄 매수만큼 OUT 하고 라인/작업자 귀속.
+     * 재고 부족 시 0 으로 클램프(인쇄 자체는 막지 않음). 미등록 코드면 no-op(null).
+     */
+    @Transactional
+    public InventoryMovement consumeForPrint(String code, int qty, String operator, String line) {
+        Product p = products.findByCode(code).orElse(null);
+        if (p == null || qty <= 0) return null;
+        int out = Math.min(qty, p.getQuantity());          // 0 미만 방지 클램프
+        int result = p.getQuantity() - out;
+        p.setQuantity(result);
+        products.save(p);
+        InventoryMovement m = record(p, InventoryMovement.Type.OUT, -out, result,
+                "print", operator, line, true);
+        log.info("[inventory] 인쇄 자동출고 {} -{} → {} (op={}, line={})", code, out, result, operator, line);
+        return m;
+    }
+
+    private InventoryMovement record(Product p, InventoryMovement.Type type, int applied, int result,
+                                     String note, String operator, String line, boolean fromPrint) {
         InventoryMovement m = new InventoryMovement();
         m.setProductId(p.getId());
         m.setCode(p.getCode());
@@ -69,10 +100,11 @@ public class InventoryService {
         m.setDelta(applied);
         m.setResultQty(result);
         m.setNote(note);
+        m.setOperator(operator);
+        m.setLine(line);
+        m.setFromPrint(fromPrint);
         movements.save(m);
-
         events.publishEvent(new InventoryMovedEvent(m));
-        log.info("[inventory] {} {} {} → {}", type, p.getCode(), applied, result);
         return m;
     }
 

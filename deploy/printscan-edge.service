@@ -1,0 +1,19 @@
+[Unit]
+Description=printscan edge (라벨 어플라이언스 — 온디바이스)
+After=network-online.target cups.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=printscan
+SupplementaryGroups=lp lpadmin
+WorkingDirectory=/opt/printscan-edge
+# 라인/프린터/허브 설정은 edge.env 로 주입(없어도 기동)
+EnvironmentFile=-/opt/printscan-edge/edge.env
+ExecStart=/usr/bin/java -jar /opt/printscan-edge/app.jar --server.port=8091
+Restart=always
+RestartSec=5
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
