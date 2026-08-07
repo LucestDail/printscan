@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스캔·재고 · printscan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link th:href="@{/design/tokens.css}" rel="stylesheet">
+  <link th:href="@{/design/components.css}" rel="stylesheet">
+  <style>
+    .wrap { max-width: var(--content-max); margin: 0 auto; padding: var(--space-lg); }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+    .card { background: var(--color-canvas); border: var(--border-hairline); border-radius: var(--radius-lg); padding: var(--space-lg); margin-bottom: var(--space-lg); }
+    .card h3 { margin: 0 0 var(--space-sm); font-size: var(--t-body-strong-size); font-weight: 600; }
+    label { display:block; font-size: var(--t-caption-size); color: var(--color-ink-muted-80); margin: 6px 0 3px; }
+    input { font-family: var(--font-text); font-size: var(--t-body-size); border: var(--border-hairline); border-radius: var(--radius-sm); padding: 9px 11px; width: 100%; box-sizing: border-box; }
+    .scan-hero { text-align:center; padding: var(--space-lg); }
+    .scan-dot { width:12px; height:12px; border-radius:50%; background:var(--color-primary); display:inline-block; margin-right:8px; animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+    #scanInput { position:absolute; left:-9999px; }
+    .prod-card { border:2px solid var(--color-primary); border-radius: var(--radius-md); padding: var(--space-md); margin-top: var(--space-sm); }
+    .prod-card.low { border-color: var(--color-ink); }
+    .qty { font-family: var(--font-display); font-size: 40px; font-weight: 600; }
+    .row2 { display:flex; gap: var(--space-xs); }
+    table { width:100%; border-collapse: collapse; font-size: var(--t-caption-size); }
+    th,td { text-align:left; padding:6px 8px; border-bottom: 1px solid var(--color-hairline); }
+    .badge { font-size: var(--t-fine-print-size); padding:2px 8px; border-radius: var(--radius-pill); }
+    .badge.in { background:#e6f3ff; color:var(--color-primary); }
+    .badge.out { background:#ffe9e9; color:#c0392b; }
+    .muted { color: var(--color-ink-muted-48); font-size: var(--t-fine-print-size); }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--color-ink); color:#fff; padding: 12px 18px; border-radius: var(--radius-md); font-size: var(--t-caption-size); display:none; z-index:50; }
+  </style>
+</head>
+<body onclick="focusScan()">
+
+<nav class="global-nav">
+  <strong style="font-size:14px;">▪ printscan</strong>
+  <a th:href="@{/}">홈</a>
+  <a th:href="@{/designer}">라벨 디자이너</a>
+  <a th:href="@{/scan}">스캔·재고</a>
+  <span class="spacer"></span>
+  <span class="t-fine-print" style="opacity:.7;">mode: <span th:text="${printerMode}">cups</span></span>
+</nav>
+
+<div class="sub-nav"><span class="category">스캔 · 재고</span></div>
+
+<div class="wrap">
+  <input type="text" id="scanInput" autocomplete="off">
+  <div class="scan-hero card">
+    <span class="scan-dot"></span><span class="t-tagline">바코드/QR 스캔 대기 중…</span>
+    <div class="muted" style="margin-top:6px;">핸디 스캐너로 스캔(HID) 또는 아래에 코드 입력 후 Enter</div>
+    <div style="max-width:320px;margin:var(--space-sm) auto 0;"><input id="manualCode" placeholder="코드 수동 입력 후 Enter"></div>
+  </div>
+
+  <div class="layout">
+    <!-- 좌: 스캔 결과 / 입출고 -->
+    <div>
+      <div class="card">
+        <h3>스캔 결과</h3>
+        <div id="scanResult"><div class="muted">스캔하면 제품이 여기 표시됩니다.</div></div>
+      </div>
+      <div class="card">
+        <h3>제품 등록</h3>
+        <div class="row2">
+          <div style="flex:2"><label>코드</label><input id="npCode"></div>
+          <div style="flex:3"><label>이름</label><input id="npName"></div>
+          <div style="flex:1"><label>초기수량</label><input id="npQty" type="number" value="0"></div>
+        </div>
+        <button class="btn btn-primary" id="btnAddProduct" style="margin-top:var(--space-sm);width:100%;">제품 등록</button>
+      </div>
+    </div>
+
+    <!-- 우: 재고 목록 / 이력 -->
+    <div>
+      <div class="card">
+        <h3>재고</h3>
+        <table><thead><tr><th>코드</th><th>이름</th><th>수량</th><th></th></tr></thead><tbody id="prodBody"></tbody></table>
+      </div>
+      <div class="card">
+        <h3>최근 이력</h3>
+        <table><thead><tr><th>시각</th><th>코드</th><th>구분</th><th>변동</th><th>결과</th></tr></thead><tbody id="histBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script th:src="@{/js/scan.js}"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+/*
+ * printscan v2 — 컴포넌트 (Apple 스타일)
+ * tokens.css 의존. hover 미문서화(기본/active/focus 상태만). 그림자는 제품이미지 전용.
+ */
+
+/* ── Base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-text);
+  font-size: var(--t-body-size);
+  font-weight: var(--t-body-weight);
+  line-height: var(--t-body-lh);
+  letter-spacing: var(--t-body-ls);
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography utilities ───────────────────────────── */
+.t-hero        { font-family: var(--font-display); font-size: var(--t-hero-size); font-weight: var(--t-hero-weight); line-height: var(--t-hero-lh); letter-spacing: var(--t-hero-ls); }
+.t-display-lg  { font-family: var(--font-display); font-size: var(--t-display-lg-size); font-weight: var(--t-display-lg-weight); line-height: var(--t-display-lg-lh); letter-spacing: var(--t-display-lg-ls); }
+.t-display-md  { font-family: var(--font-text); font-size: var(--t-display-md-size); font-weight: var(--t-display-md-weight); line-height: var(--t-display-md-lh); letter-spacing: var(--t-display-md-ls); }
+.t-lead        { font-size: var(--t-lead-size); font-weight: var(--t-lead-weight); line-height: var(--t-lead-lh); letter-spacing: var(--t-lead-ls); }
+.t-lead-airy   { font-size: var(--t-lead-airy-size); font-weight: var(--t-lead-airy-weight); line-height: var(--t-lead-airy-lh); }
+.t-tagline     { font-size: var(--t-tagline-size); font-weight: var(--t-tagline-weight); line-height: var(--t-tagline-lh); letter-spacing: var(--t-tagline-ls); }
+.t-body-strong { font-size: var(--t-body-strong-size); font-weight: var(--t-body-strong-weight); line-height: var(--t-body-strong-lh); letter-spacing: var(--t-body-strong-ls); }
+.t-caption     { font-size: var(--t-caption-size); font-weight: var(--t-caption-weight); line-height: var(--t-caption-lh); letter-spacing: var(--t-caption-ls); }
+.t-fine-print  { font-size: var(--t-fine-print-size); font-weight: var(--t-fine-print-weight); line-height: var(--t-fine-print-lh); letter-spacing: var(--t-fine-print-ls); }
+
+/* ── Global Nav (true black, 44px) ──────────────────── */
+.global-nav {
+  height: var(--nav-height);
+  background: var(--color-black);
+  color: var(--color-body-on-dark);
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 var(--space-lg);
+}
+.global-nav a {
+  color: var(--color-body-on-dark);
+  font-size: var(--t-nav-link-size); font-weight: var(--t-nav-link-weight); letter-spacing: var(--t-nav-link-ls);
+  text-decoration: none; opacity: 0.9;
+}
+.global-nav .spacer { flex: 1; }
+
+/* ── Sub-nav (frosted parchment) ────────────────────── */
+.sub-nav {
+  position: sticky; top: 0; z-index: 10;
+  height: var(--subnav-height);
+  background: color-mix(in srgb, var(--color-parchment) 80%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  display: flex; align-items: center; gap: var(--space-lg);
+  padding: 0 var(--space-lg);
+  border-bottom: 1px solid var(--color-divider-soft);
+}
+.sub-nav .category { font-size: var(--t-tagline-size); font-weight: var(--t-tagline-weight); letter-spacing: var(--t-tagline-ls); }
+.sub-nav .links { display: flex; gap: var(--space-lg); margin-left: auto; align-items: center; }
+.sub-nav .links a { color: var(--color-ink); text-decoration: none; font-size: var(--t-button-utility-size); }
+
+/* ── Buttons ────────────────────────────────────────── */
+.btn { border: none; cursor: pointer; font-family: var(--font-text); transition: transform 0.1s ease; }
+.btn:active { transform: scale(var(--press-scale)); }
+.btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--t-body-size); font-weight: var(--t-body-weight);
+  border-radius: var(--radius-pill);
+  padding: 11px 22px;
+}
+.btn-secondary-pill {           /* 두 CTA 동시 노출 시 두 번째 = ghost pill */
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  font-size: var(--t-body-size);
+  border-radius: var(--radius-pill);
+  padding: 11px 22px;
+}
+.btn-dark-utility {             /* 글로벌 nav 액션(Sign In, Bag) */
+  background: var(--color-ink);
+  color: var(--color-body-on-dark);
+  font-size: var(--t-button-utility-size); letter-spacing: var(--t-button-utility-ls);
+  border-radius: var(--radius-sm);
+  padding: 8px 15px;
+}
+.btn-pearl {                    /* 제품카드 보조버튼 */
+  background: var(--color-surface-pearl);
+  color: var(--color-ink-muted-80);
+  font-size: var(--t-caption-size);
+  border: 3px solid var(--color-divider-soft);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+}
+.btn-store-hero {               /* 스토어 히어로 대형 CTA (weight 300) */
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--t-button-large-size); font-weight: var(--t-button-large-weight);
+  border-radius: var(--radius-pill);
+  padding: 14px 28px;
+}
+.btn-icon-circular {            /* 사진 위 원형 컨트롤 44x44 */
+  width: 44px; height: 44px;
+  background: var(--color-chip-translucent);
+  color: var(--color-ink);
+  border-radius: var(--radius-full);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+.text-link { color: var(--color-primary); text-decoration: none; }
+.text-link-on-dark { color: var(--color-primary-on-dark); text-decoration: none; }
+
+/* ── Product Tiles (full-bleed, 색전환=구분선) ───────── */
+.tile { padding: var(--space-section) var(--space-lg); text-align: center; border-radius: var(--radius-none); }
+.tile-light     { background: var(--color-canvas); color: var(--color-ink); }
+.tile-parchment { background: var(--color-parchment); color: var(--color-ink); }
+.tile-dark      { background: var(--color-tile-1); color: var(--color-body-on-dark); }
+.tile-dark-2    { background: var(--color-tile-2); color: var(--color-body-on-dark); }
+.tile-dark-3    { background: var(--color-tile-3); color: var(--color-body-on-dark); }
+.tile .headline { margin: 0 0 var(--space-sm); }
+.tile .tagline  { margin: 0 0 var(--space-lg); }
+.tile .ctas { display: flex; gap: var(--space-md); justify-content: center; }
+.tile .product-img { margin-top: var(--space-xxl); box-shadow: var(--shadow-product); } /* 유일한 그림자 */
+
+/* ── Cards ──────────────────────────────────────────── */
+.util-card {
+  background: var(--color-canvas);
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+.util-card .img { border-radius: var(--radius-sm); aspect-ratio: 1/1; background: var(--color-parchment); display: block; width: 100%; }
+.util-card .name { margin: var(--space-md) 0 var(--space-xxs); }
+.util-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); max-width: var(--content-max); margin: 0 auto; }
+
+/* 설정 칩(pill) */
+.option-chip {
+  background: var(--color-canvas); color: var(--color-ink);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  padding: 12px 16px; font-size: var(--t-caption-size);
+}
+.option-chip.selected { border: 2px solid var(--color-primary-focus); }
+
+/* 검색 입력(pill) */
+.search-input {
+  background: var(--color-canvas); color: var(--color-ink);
+  font-size: var(--t-body-size);
+  border: var(--border-soft);
+  border-radius: var(--radius-pill);
+  padding: 12px 20px; height: 44px; width: 100%;
+}
+
+/* ── Footer (parchment, dense links) ────────────────── */
+.footer { background: var(--color-parchment); color: var(--color-ink-muted-80); padding: 64px var(--space-lg); }
+.footer .col-head { font-size: var(--t-caption-strong-size); font-weight: var(--t-caption-strong-weight); }
+.footer a { display: block; color: var(--color-ink-muted-80); text-decoration: none; font-size: var(--t-dense-link-size); line-height: var(--t-dense-link-lh); }
+.footer .legal { color: var(--color-ink-muted-48); font-size: var(--t-fine-print-size); margin-top: var(--space-lg); }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 1068px) { .t-hero { font-size: var(--t-display-lg-size); } .util-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 833px)  { .util-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .t-hero { font-size: var(--t-display-md-size); } .tile { padding: var(--space-xxl) var(--space-lg); } .util-grid { grid-template-columns: 1fr; } }

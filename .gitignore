@@ -34,3 +34,6 @@ build/
 
 # macOS
 .DS_Store
+
+# H2 런타임 DB
+data/

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>printscan · 온디바이스</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link th:href="@{/design/tokens.css}" rel="stylesheet">
+  <link th:href="@{/design/components.css}" rel="stylesheet">
+</head>
+<body>
+
+<nav class="global-nav">
+  <strong style="font-size:14px;">▪ printscan</strong>
+  <a th:href="@{/}">홈</a>
+  <a th:href="@{/designer}">라벨 디자이너</a>
+  <span class="spacer"></span>
+  <span class="t-fine-print" style="opacity:.7;">mode: <span th:text="${printerMode}">cups</span></span>
+</nav>
+
+<section class="tile tile-light">
+  <h1 class="t-hero headline">현장에서, 클라우드까지.</h1>
+  <p class="t-lead tagline">라즈베리파이 하나로 라벨을 디자인하고, 인쇄하고, 통합 관리하세요.</p>
+  <div class="ctas">
+    <a class="btn btn-primary" th:href="@{/designer}">라벨 디자이너 열기</a>
+    <a class="btn btn-secondary-pill" href="/h2-console">DB 콘솔</a>
+  </div>
+</section>
+
+<section class="tile tile-dark">
+  <h2 class="t-display-lg headline">엔터프라이즈급 라벨 엔진</h2>
+  <p class="t-lead tagline" style="color:var(--color-body-muted)">
+    한글·QR·바코드를 서버에서 렌더 — 화면과 인쇄물이 완전히 같습니다.
+  </p>
+</section>
+
+<footer class="footer">
+  <div style="max-width:var(--content-max);margin:0 auto;">
+    <div class="col-head">printscan edge · 온디바이스</div>
+    <div class="legal">© 2026 printscan · 로컬퍼스트 + 클라우드 동기화(예정)</div>
+  </div>
+</footer>
+
+</body>
+</html>

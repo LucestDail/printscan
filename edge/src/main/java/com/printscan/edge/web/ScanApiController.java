@@ -1,0 +1,63 @@
+package com.printscan.edge.web;
+
+import com.printscan.edge.inventory.InventoryMovement;
+import com.printscan.edge.inventory.InventoryService;
+import com.printscan.edge.inventory.Product;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+/** 스캔/재고 REST — 제품 CRUD + 스캔 조회 + 입출고. */
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+public class ScanApiController {
+
+    private final InventoryService service;
+
+    // ── 제품 ──
+    @GetMapping("/products")
+    public List<Product> products() { return service.findAll(); }
+
+    @PostMapping("/products")
+    public ResponseEntity<?> createProduct(@RequestBody Product p) {
+        try { return ResponseEntity.ok(service.save(p)); }
+        catch (IllegalArgumentException e) { return ResponseEntity.badRequest().body(Map.of("error", e.getMessage())); }
+    }
+
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── 스캔 조회 ──
+    @GetMapping("/scan/lookup")
+    public ResponseEntity<?> lookup(@RequestParam String code) {
+        Product p = service.lookup(code.trim());
+        if (p == null) return ResponseEntity.status(404).body(Map.of("found", false, "code", code));
+        return ResponseEntity.ok(p);
+    }
+
+    // ── 입출고 ──
+    @PostMapping("/inventory/move")
+    public ResponseEntity<?> move(@RequestBody MoveRequest req) {
+        try {
+            InventoryMovement.Type t = InventoryMovement.Type.valueOf(req.type().toUpperCase());
+            InventoryMovement m = service.move(req.code().trim(), t, req.qty(), req.note());
+            return ResponseEntity.ok(m);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/inventory/history")
+    public List<InventoryMovement> history(@RequestParam(defaultValue = "50") int limit) {
+        return service.history(limit);
+    }
+
+    public record MoveRequest(String code, String type, int qty, String note) {}
+}
