@@ -25,9 +25,9 @@ async function refresh() {
     $('sQueued').textContent = stats.queued;
 
     $('devBody').innerHTML = devs.map(d => `<tr>
-      <td><span class="dot ${d.online?'on':'off'}"></span>${d.online?'온라인':'오프라인'}</td>
+      <td><span class="dot ${d.online?'on':'off'}"></span>${d.online?t('dev.online'):t('dev.offline')}</td>
       <td>${d.id}</td><td>${d.name}</td><td>${d.line||'-'}</td><td>${d.printerMode||'-'}</td><td>${d.printCount}</td>
-      <td class="muted">${fmt(d.lastSeenAt)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">등록된 디바이스 없음</td></tr>';
+      <td class="muted">${fmt(d.lastSeenAt)}</td></tr>`).join('') || `<tr><td colspan="7" class="muted">${t('empty.devices')}</td></tr>`;
 
     renderMap('cByLine', consume.byLine); renderMap('cByOp', consume.byOperator); renderMap('cByProd', consume.byProduct);
     $('cTotal').textContent = consume.total || 0;
@@ -37,11 +37,11 @@ async function refresh() {
     if (cur) sel.value = cur;
 
     $('snapBody').innerHTML = snaps.map(s=>`<tr><td>#${s.deviceId}</td><td>${s.code}</td><td>${s.name}</td><td>${s.quantity}</td></tr>`).join('')
-      || '<tr><td colspan="4" class="muted">업싱크된 재고 없음</td></tr>';
+      || `<tr><td colspan="4" class="muted">${t('empty.stock')}</td></tr>`;
 
     $('jobBody').innerHTML = jobs.map(j=>`<tr><td>${j.id}</td><td>#${j.deviceId}</td>
-      <td><span class="badge ${j.status}">${j.status}</span></td><td class="muted">${j.message||''}</td></tr>`).join('')
-      || '<tr><td colspan="4" class="muted">잡 없음</td></tr>';
+      <td><span class="badge ${j.status}">${t('job.status.'+j.status)}</span></td><td class="muted">${j.message||''}</td></tr>`).join('')
+      || `<tr><td colspan="4" class="muted">${t('empty.jobs')}</td></tr>`;
   } catch(e) { /* noop */ }
 }
 function fmt(s){ return s ? String(s).replace('T',' ').slice(5,16) : '-'; }
@@ -53,7 +53,7 @@ function renderMap(id, obj){
 
 async function netPrint() {
   const id = $('npDevice').value;
-  if (!id) { toast('디바이스를 선택하세요'); return; }
+  if (!id) { toast(t('toast.selectDevice')); return; }
   const count = parseInt($('npCount').value)||1;
   const body = {
     widthMm: parseFloat($('npW').value), heightMm: parseFloat($('npH').value), dpi: parseInt($('npDpi').value),
@@ -64,13 +64,14 @@ async function netPrint() {
     serialStart: parseInt($('npStart').value)||1, serialCount: count, serialPad: parseInt($('npPad').value)||0
   };
   const res = await fetch(`/api/admin/devices/${id}/print`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if (!res.ok) { toast('지시 실패'); return; }
+  if (!res.ok) { toast(t('toast.enqueueFail')); return; }
   const j = await res.json();
-  toast(`잡 #${j.id} 큐잉됨 → 디바이스가 곧 인쇄`);
+  toast(t('toast.enqueued', [j.id]));
   refresh();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadI18n(document.documentElement.lang || 'ko');
   $('npElements').value = DEFAULT_ELEMENTS;
   $('btnNetPrint').addEventListener('click', netPrint);
   refresh();

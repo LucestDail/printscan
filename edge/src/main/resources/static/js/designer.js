@@ -129,7 +129,7 @@ function onUp() { if (drag) { drag = null; schedulePreview(); } }
 // ── 속성 패널 ──────────────────────────────
 function renderProps(valuesOnly) {
   const box = $('props');
-  if (selected < 0) { box.innerHTML = '<div class="prop-empty">요소를 선택하세요.</div>'; return; }
+  if (selected < 0) { box.innerHTML = `<div class="prop-empty">${t('designer.selectEl')}</div>`; return; }
   const e = elements[selected];
   if (valuesOnly && box.dataset.for === String(selected)) {
     // 드래그 중엔 좌표/크기만 갱신
@@ -139,21 +139,21 @@ function renderProps(valuesOnly) {
     return;
   }
   box.dataset.for = String(selected);
-  let html = `<label>종류</label><input value="${e.type}" disabled>`;
-  if (e.type !== 'BOX') html += `<label>값 (({{키}}) 가능)</label><input data-k="value" value="${escapeAttr(e.value || '')}">`;
-  html += `<div class="size-row"><div><label>x(mm)</label><input data-k="xMm" type="number" step="0.5" value="${e.xMm}"></div>
-           <div><label>y(mm)</label><input data-k="yMm" type="number" step="0.5" value="${e.yMm}"></div></div>`;
+  let html = `<label>${t('designer.p.type')}</label><input value="${e.type}" disabled>`;
+  if (e.type !== 'BOX') html += `<label>${t('designer.p.value')}</label><input data-k="value" value="${escapeAttr(e.value || '')}">`;
+  html += `<div class="size-row"><div><label>${t('designer.p.x')}</label><input data-k="xMm" type="number" step="0.5" value="${e.xMm}"></div>
+           <div><label>${t('designer.p.y')}</label><input data-k="yMm" type="number" step="0.5" value="${e.yMm}"></div></div>`;
   if (e.type === 'TEXT') {
-    html += `<label>글자 높이(mm)</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}">
-             <label><input data-k="bold" type="checkbox" ${e.bold ? 'checked' : ''} style="width:auto;margin-right:6px;">굵게</label>`;
+    html += `<label>${t('designer.p.textH')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}">
+             <label><input data-k="bold" type="checkbox" ${e.bold ? 'checked' : ''} style="width:auto;margin-right:6px;">${t('designer.p.bold')}</label>`;
   } else if (e.type === 'QR') {
-    html += `<label>한 변(mm)</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}">`;
+    html += `<label>${t('designer.p.qrSize')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}">`;
   } else if (e.type === 'BARCODE') {
-    html += `<div class="size-row"><div><label>폭(mm)</label><input data-k="widthMm" type="number" step="0.5" value="${e.widthMm}"></div>
-             <div><label>높이(mm)</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}"></div></div>`;
+    html += `<div class="size-row"><div><label>${t('designer.w')}</label><input data-k="widthMm" type="number" step="0.5" value="${e.widthMm}"></div>
+             <div><label>${t('designer.h')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}"></div></div>`;
   } else if (e.type === 'BOX') {
-    html += `<div class="size-row"><div><label>폭(mm)</label><input data-k="widthMm" type="number" step="0.5" value="${e.widthMm}"></div>
-             <div><label>높이(mm)</label><input data-k="heightMm" type="number" step="0.5" value="${e.heightMm}"></div></div>`;
+    html += `<div class="size-row"><div><label>${t('designer.w')}</label><input data-k="widthMm" type="number" step="0.5" value="${e.widthMm}"></div>
+             <div><label>${t('designer.h')}</label><input data-k="heightMm" type="number" step="0.5" value="${e.heightMm}"></div></div>`;
   }
   box.innerHTML = html;
   box.querySelectorAll('[data-k]').forEach(inp => {
@@ -174,7 +174,7 @@ function escapeAttr(s) { return String(s).replace(/"/g, '&quot;'); }
 function syncJson() { $('elementsJson').value = JSON.stringify(elements, null, 2); }
 function applyJson() {
   try { elements = JSON.parse($('elementsJson').value) || []; selected = -1; draw(); renderProps(); refreshVariables(); schedulePreview(); }
-  catch (e) { toast('JSON 파싱 오류'); }
+  catch (e) { toast(t('designer.t.jsonErr')); }
 }
 
 // ── 변수 ──────────────────────────────
@@ -185,7 +185,7 @@ function detectVariables() {
 }
 function refreshVariables() {
   const vars = detectVariables(), box = $('varInputs'), prev = collectVariables();
-  if (!vars.length) { box.innerHTML = '<span class="muted">{{키}} 감지 시 입력란 생성</span>'; return; }
+  if (!vars.length) { box.innerHTML = `<span class="muted">${t('designer.varsNote')}</span>`; return; }
   box.innerHTML = vars.map(v => `<div><label>${v}</label><input class="var-input" data-key="${v}" value="${prev[v] || ''}"></div>`).join('');
   box.querySelectorAll('.var-input').forEach(i => i.addEventListener('input', schedulePreview));
 }
@@ -206,15 +206,15 @@ async function doBatch() {
     pad: parseInt($('bPad').value) || 0 };
   try {
     const res = await fetch('/api/labels/print-batch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    const msg = await res.text(); toast(res.ok ? msg : ('배치 실패: ' + msg));
-  } catch (e) { toast('배치 오류: ' + e.message); }
+    const msg = await res.text(); toast(res.ok ? msg : (t('designer.t.batchFail') + ': ' + msg));
+  } catch (e) { toast(t('designer.t.batchFail') + ': ' + e.message); }
 }
 
 function schedulePreview() { clearTimeout(previewTimer); previewTimer = setTimeout(doPreview, 350); }
 async function doPreview() {
   try {
     const res = await fetch('/api/labels/preview', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(req()) });
-    if (!res.ok) { $('previewPh').textContent = '미리보기 실패'; $('previewPh').style.display='block'; return; }
+    if (!res.ok) { $('previewPh').textContent = t('designer.t.previewFail'); $('previewPh').style.display='block'; return; }
     const blob = await res.blob(), img = $('previewImg');
     if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
     const url = URL.createObjectURL(blob); img.dataset.url = url; img.src = url; img.style.display='block';
@@ -229,18 +229,18 @@ async function doPrint() {
 }
 
 // ── 템플릿 CRUD ──────────────────────────────
-function payload() { return { name: $('name').value || '이름없는 템플릿', widthMm: labelW(), heightMm: labelH(), dpi: parseInt($('dpi').value)||203, elementsJson: JSON.stringify(elements) }; }
+function payload() { return { name: $('name').value || t('designer.t.unnamed'), widthMm: labelW(), heightMm: labelH(), dpi: parseInt($('dpi').value)||203, elementsJson: JSON.stringify(elements) }; }
 async function loadList() {
   const res = await fetch('/api/labels/templates'); if (!res.ok) return;
   const list = await res.json();
-  $('tplSelect').innerHTML = '<option value="">저장된 템플릿…</option>' + list.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  $('tplSelect').innerHTML = `<option value="">${t('designer.savedTpl')}</option>` + list.map(x => `<option value="${x.id}">${x.name}</option>`).join('');
 }
 async function loadTemplate(id) {
   if (!id) return;
-  const res = await fetch('/api/labels/templates/' + id); if (!res.ok) { toast('불러오기 실패'); return; }
-  const t = await res.json(); currentId = t.id;
-  $('name').value = t.name || ''; $('widthMm').value = t.widthMm; $('heightMm').value = t.heightMm; if (t.dpi) $('dpi').value = t.dpi;
-  try { elements = JSON.parse(t.elementsJson || '[]'); } catch (_) { elements = []; }
+  const res = await fetch('/api/labels/templates/' + id); if (!res.ok) { toast(t('designer.t.loadFail')); return; }
+  const tpl = await res.json(); currentId = tpl.id;
+  $('name').value = tpl.name || ''; $('widthMm').value = tpl.widthMm; $('heightMm').value = tpl.heightMm; if (tpl.dpi) $('dpi').value = tpl.dpi;
+  try { elements = JSON.parse(tpl.elementsJson || '[]'); } catch (_) { elements = []; }
   selected = -1; $('btnDelete').disabled = false;
   recomputeScale(); draw(); renderProps(); syncJson(); refreshVariables(); doPreview();
 }
@@ -248,21 +248,22 @@ async function saveTemplate() {
   const method = currentId ? 'PUT' : 'POST';
   const url = currentId ? '/api/labels/templates/' + currentId : '/api/labels/templates';
   const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload()) });
-  if (!res.ok) { toast('저장 실패'); return; }
-  const t = await res.json(); currentId = t.id; $('btnDelete').disabled = false;
-  await loadList(); $('tplSelect').value = t.id; toast("'" + t.name + "' 저장됨");
+  if (!res.ok) { toast(t('designer.t.saveFail')); return; }
+  const tpl = await res.json(); currentId = tpl.id; $('btnDelete').disabled = false;
+  await loadList(); $('tplSelect').value = tpl.id; toast("'" + tpl.name + "' " + t('designer.t.saved'));
 }
 async function deleteTemplate() {
-  if (!currentId || !confirm('삭제할까요?')) return;
+  if (!currentId || !confirm(t('designer.t.confirmDel'))) return;
   const res = await fetch('/api/labels/templates/' + currentId, { method:'DELETE' });
-  if (!res.ok) { toast('삭제 실패'); return; }
-  currentId = null; $('btnDelete').disabled = true; $('tplSelect').value = ''; await loadList(); toast('삭제됨');
+  if (!res.ok) { toast(t('designer.t.delFail')); return; }
+  currentId = null; $('btnDelete').disabled = true; $('tplSelect').value = ''; await loadList(); toast(t('designer.t.deleted'));
 }
 
 function toast(m) { const t = $('toast'); t.textContent = m; t.style.display='block'; setTimeout(()=>t.style.display='none', 2600); }
 
 // ── 초기화 ──────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadI18n(document.documentElement.lang || 'ko');
   elements = [ { type:'TEXT', xMm:1.5, yMm:2, value:'한글 {{name}}', sizeMm:2.2, bold:true }, { type:'TEXT', xMm:1.5, yMm:5.5, value:'{{code}}', sizeMm:2.2 }, DEFAULTS.BARCODE(), DEFAULTS.QR() ];
   recomputeScale(); draw(); syncJson(); refreshVariables();
 

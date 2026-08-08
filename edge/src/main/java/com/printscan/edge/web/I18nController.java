@@ -23,7 +23,14 @@ public class I18nController {
             "scan.in", "scan.out", "scan.low", "scan.notFound", "scan.registerThis",
             "scan.select", "scan.empty.products", "scan.empty.history",
             "toast.lookupErr", "toast.moveDone", "toast.moveFail",
-            "toast.codeNameReq", "toast.registerFail", "toast.registered"
+            "toast.codeNameReq", "toast.registerFail", "toast.registered",
+            // designer (props panel + toasts, JS 생성)
+            "designer.p.type", "designer.p.value", "designer.p.x", "designer.p.y",
+            "designer.p.textH", "designer.p.bold", "designer.p.qrSize", "designer.w", "designer.h",
+            "designer.selectEl", "designer.varsNote", "designer.savedTpl",
+            "designer.t.jsonErr", "designer.t.batchFail", "designer.t.previewFail", "designer.t.unnamed",
+            "designer.t.loadFail", "designer.t.saveFail", "designer.t.saved",
+            "designer.t.confirmDel", "designer.t.delFail", "designer.t.deleted"
     );
 
     @GetMapping("/api/i18n/{lang}.json")

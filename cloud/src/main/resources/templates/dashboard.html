@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>printscan cloud · 통합 대시보드</title>
+  <title th:text="#{dash.title}">printscan hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link th:href="@{/design/tokens.css}" rel="stylesheet">
@@ -31,90 +31,102 @@
     textarea{font-family:ui-monospace,Menlo,monospace;}
     .muted{color:var(--color-ink-muted-48);font-size:var(--t-fine-print-size);}
     .toast{position:fixed;bottom:20px;right:20px;background:var(--color-ink);color:#fff;padding:12px 18px;border-radius:var(--radius-md);font-size:var(--t-caption-size);display:none;z-index:50;}
+    .lang a { color: var(--color-primary); text-decoration:none; font-size: var(--t-nav-link-size); }
+    .lang a.on { font-weight:600; text-decoration:underline; }
   </style>
 </head>
 <body>
 
 <nav class="global-nav">
-  <strong style="font-size:14px;">▪ printscan <span style="opacity:.6;">cloud</span></strong>
+  <strong style="font-size:14px;">▪ printscan <span style="opacity:.6;">hub</span></strong>
   <span class="spacer"></span>
-  <span class="t-fine-print" style="opacity:.7;">통합 관리 · 네트워크 출력</span>
+  <span class="t-fine-print" style="opacity:.7;margin-right:14px;" th:text="#{brand.sub}">통합 관리</span>
+  <span class="lang">
+    <a th:href="@{/(lang='ko')}" th:classappend="${#locale.language=='ko'}?'on'">KO</a>
+    <span style="opacity:.4">·</span>
+    <a th:href="@{/(lang='en')}" th:classappend="${#locale.language=='en'}?'on'">EN</a>
+  </span>
 </nav>
 
 <section class="tile tile-light" style="padding: var(--space-xl) var(--space-lg);">
-  <h1 class="t-display-lg headline" style="margin:0;">플릿 대시보드</h1>
-  <p class="t-lead tagline" style="margin:6px 0 0;">모든 디바이스의 출력·재고를 한 곳에서. 원격으로 인쇄를 지시하세요.</p>
+  <h1 class="t-display-lg headline" style="margin:0;" th:text="#{dash.h1}">장비 현황</h1>
+  <p class="t-lead tagline" style="margin:6px 0 0;" th:text="#{dash.sub}">…</p>
 </section>
 
 <div class="wrap">
   <div class="stats">
-    <div class="stat"><div class="n" id="sDevices">–</div><div class="l">디바이스</div></div>
-    <div class="stat"><div class="n" id="sOnline">–</div><div class="l">온라인</div></div>
-    <div class="stat"><div class="n" id="sPrinted">–</div><div class="l">누적 인쇄</div></div>
-    <div class="stat"><div class="n" id="sQueued">–</div><div class="l">대기 잡</div></div>
+    <div class="stat"><div class="n" id="sDevices">–</div><div class="l" th:text="#{stat.devices}">장비</div></div>
+    <div class="stat"><div class="n" id="sOnline">–</div><div class="l" th:text="#{stat.online}">온라인</div></div>
+    <div class="stat"><div class="n" id="sPrinted">–</div><div class="l" th:text="#{stat.printed}">누적 인쇄</div></div>
+    <div class="stat"><div class="n" id="sQueued">–</div><div class="l" th:text="#{stat.queued}">대기 작업</div></div>
   </div>
 
   <div class="layout">
     <div>
       <div class="card">
-        <h3>디바이스</h3>
-        <table><thead><tr><th>상태</th><th>ID</th><th>이름</th><th>라인</th><th>mode</th><th>인쇄수</th><th>최근접속</th></tr></thead><tbody id="devBody"></tbody></table>
+        <h3 th:text="#{dev.title}">장비</h3>
+        <table><thead><tr>
+          <th th:text="#{dev.h.status}">상태</th><th th:text="#{dev.h.id}">ID</th><th th:text="#{dev.h.name}">이름</th>
+          <th th:text="#{dev.h.line}">라인</th><th th:text="#{dev.h.printer}">프린터</th>
+          <th th:text="#{dev.h.printCount}">인쇄수</th><th th:text="#{dev.h.lastSeen}">최근접속</th>
+        </tr></thead><tbody id="devBody"></tbody></table>
       </div>
       <div class="card">
-        <h3>소비(출고) 집계 <span class="muted">인쇄=자동 출고</span></h3>
+        <h3 th:text="#{consume.title}">사용량</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);">
-          <div><div class="muted" style="margin-bottom:4px;">라인별</div><table><tbody id="cByLine"></tbody></table></div>
-          <div><div class="muted" style="margin-bottom:4px;">작업자별</div><table><tbody id="cByOp"></tbody></table></div>
-          <div><div class="muted" style="margin-bottom:4px;">제품별</div><table><tbody id="cByProd"></tbody></table></div>
+          <div><div class="muted" style="margin-bottom:4px;" th:text="#{consume.byLine}">라인별</div><table><tbody id="cByLine"></tbody></table></div>
+          <div><div class="muted" style="margin-bottom:4px;" th:text="#{consume.byOperator}">작업자별</div><table><tbody id="cByOp"></tbody></table></div>
+          <div><div class="muted" style="margin-bottom:4px;" th:text="#{consume.byProduct}">제품별</div><table><tbody id="cByProd"></tbody></table></div>
         </div>
-        <div class="muted" style="margin-top:6px;">총 소비: <b id="cTotal">0</b></div>
+        <div class="muted" style="margin-top:6px;"><span th:text="#{consume.total}">총 사용량</span>: <b id="cTotal">0</b></div>
       </div>
       <div class="card">
-        <h3>재고(디바이스 업싱크)</h3>
-        <table><thead><tr><th>디바이스</th><th>코드</th><th>이름</th><th>수량</th></tr></thead><tbody id="snapBody"></tbody></table>
+        <h3 th:text="#{stock.title}">재고</h3>
+        <table><thead><tr><th th:text="#{stock.h.device}">장비</th><th th:text="#{stock.h.code}">코드</th><th th:text="#{stock.h.name}">이름</th><th th:text="#{stock.h.qty}">수량</th></tr></thead><tbody id="snapBody"></tbody></table>
       </div>
       <div class="card">
-        <h3>최근 인쇄 잡</h3>
-        <table><thead><tr><th>#</th><th>디바이스</th><th>상태</th><th>메시지</th></tr></thead><tbody id="jobBody"></tbody></table>
+        <h3 th:text="#{jobs.title}">최근 인쇄 작업</h3>
+        <table><thead><tr><th th:text="#{jobs.h.num}">#</th><th th:text="#{jobs.h.device}">장비</th><th th:text="#{jobs.h.status}">상태</th><th th:text="#{jobs.h.message}">메시지</th></tr></thead><tbody id="jobBody"></tbody></table>
       </div>
     </div>
 
     <div>
       <div class="card">
-        <h3>네트워크 출력 지시</h3>
-        <label>대상 디바이스</label>
+        <h3 th:text="#{net.title}">원격 인쇄 지시</h3>
+        <label th:text="#{net.device}">대상 장비</label>
         <select id="npDevice"></select>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div><label>폭(mm)</label><input id="npW" type="number" value="40"></div>
-          <div><label>높이(mm)</label><input id="npH" type="number" value="25"></div>
-          <div><label>DPI</label><input id="npDpi" type="number" value="203"></div>
+          <div><label th:text="#{net.w}">폭</label><input id="npW" type="number" value="40"></div>
+          <div><label th:text="#{net.h}">높이</label><input id="npH" type="number" value="25"></div>
+          <div><label th:text="#{net.dpi}">해상도</label><input id="npDpi" type="number" value="203"></div>
         </div>
-        <label>요소 JSON</label>
+        <label th:text="#{net.elements}">라벨 요소</label>
         <textarea id="npElements" rows="7"></textarea>
-        <label>변수 (name, code)</label>
+        <label th:text="#{net.vars}">값</label>
         <div style="display:flex;gap:8px;">
           <input id="npName" placeholder="name" value="클라우드 인쇄">
           <input id="npCode" placeholder="code" value="NET-0001">
         </div>
-        <label>매수</label><input id="npCopies" type="number" value="1" min="1">
+        <label th:text="#{net.copies}">매수</label><input id="npCopies" type="number" value="1" min="1">
         <div style="border-top:1px solid var(--color-hairline);margin:var(--space-sm) 0;padding-top:var(--space-sm);">
-          <label>일련번호 배치 (개수 2↑ 시 배치)</label>
+          <label th:text="#{net.batchTitle}">일련번호 연속</label>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px;">
-            <input id="npSeqVar" placeholder="변수" value="code">
-            <input id="npPrefix" placeholder="접두" value="NET-">
-            <input id="npStart" type="number" placeholder="시작" value="1">
-            <input id="npCount" type="number" placeholder="개수" value="1">
-            <input id="npPad" type="number" placeholder="자리" value="4">
+            <input id="npSeqVar" th:placeholder="#{net.seqVar}" value="code">
+            <input id="npPrefix" th:placeholder="#{net.prefix}" value="NET-">
+            <input id="npStart" type="number" th:placeholder="#{net.start}" value="1">
+            <input id="npCount" type="number" th:placeholder="#{net.count}" value="1">
+            <input id="npPad" type="number" th:placeholder="#{net.pad}" value="4">
           </div>
         </div>
-        <button class="btn btn-primary" id="btnNetPrint" style="margin-top:var(--space-sm);width:100%;">이 디바이스로 인쇄</button>
-        <div class="muted" style="margin-top:6px;">지시 → 디바이스가 폴링해 로컬 인쇄 → 결과 집계 반영.</div>
+        <button class="btn btn-primary" id="btnNetPrint" style="margin-top:var(--space-sm);width:100%;" th:text="#{net.btn}">이 장비로 인쇄</button>
+        <div class="muted" style="margin-top:6px;" th:text="#{net.note}">…</div>
       </div>
     </div>
   </div>
 </div>
 
 <div id="toast" class="toast"></div>
+<script th:src="@{/js/i18n.js}"></script>
 <script th:src="@{/js/dashboard.js}"></script>
 </body>
 </html>
