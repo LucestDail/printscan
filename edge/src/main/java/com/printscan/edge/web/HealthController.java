@@ -4,6 +4,7 @@ import com.printscan.edge.config.LineProperties;
 import com.printscan.edge.config.PrinterProperties;
 import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.inventory.Product;
+import com.printscan.edge.print.PrinterStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ public class HealthController {
     private final PrinterProperties printer;
     private final LineProperties line;
     private final InventoryService inventory;
+    private final PrinterStatusService printerStatus;
 
     @GetMapping("/health")
     public Map<String, Object> health() {
@@ -34,5 +36,11 @@ public class HealthController {
                 "products", products.size(),
                 "lowStock", low
         );
+    }
+
+    /** 프린터 상태(~HQES) — network 모드만. USB/CUPS는 supported=false. */
+    @GetMapping("/printer/status")
+    public Map<String, Object> printerStatus() {
+        return printerStatus.query();
     }
 }

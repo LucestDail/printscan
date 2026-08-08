@@ -80,9 +80,43 @@ public class LabelRasterizer {
                     case DATAMATRIX -> drawDatamatrix(g, val, x, y, mm2dot(e.getSizeMm(), dpi));
                     case BARCODE -> drawBarcode(g, val, x, y,
                             mm2dot(e.getWidthMm() > 0 ? e.getWidthMm() : 30, dpi),
-                            mm2dot(e.getSizeMm(), dpi));
+                            mm2dot(e.getSizeMm(), dpi), e.isGs1());
                     case BOX -> g.fillRect(x, y, mm2dot(e.getWidthMm(), dpi), mm2dot(e.getHeightMm(), dpi));
                 }
+            }
+        } finally {
+            g.dispose();
+        }
+        return img;
+    }
+
+    /**
+     * mm 눈금자 라벨 — 자 없이 인쇄 가능폭/높이를 읽기 위한 보조. 상단 가로 눈금(1/5/10mm),
+     * 좌측 세로 눈금. 미디어보다 넓게 인쇄하면 잘리는 지점이 실제 인쇄 가능폭.
+     */
+    public BufferedImage renderRuler(int widthMm, int heightMm, int dpi) {
+        int dpm = dotsPerMm(dpi);
+        int w = Math.max(1, widthMm * dpm), h = Math.max(1, heightMm * dpm);
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        try {
+            g.setColor(Color.WHITE); g.fillRect(0, 0, w, h);
+            g.setColor(Color.BLACK);
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            Font f = baseFont.deriveFont(Font.PLAIN, (float) (dpm * 2.6)); // ~2.6mm 숫자
+            g.setFont(f);
+            // 상단 가로 눈금
+            for (int mm = 0; mm <= widthMm; mm++) {
+                int x = mm * dpm;
+                int len = (mm % 10 == 0) ? (int) (h * 0.5) : (mm % 5 == 0) ? (int) (h * 0.3) : (int) (h * 0.15);
+                g.drawLine(x, 0, x, len);
+                if (mm % 10 == 0) g.drawString(String.valueOf(mm), x + 2, (int) (h * 0.5) + dpm * 3);
+            }
+            // 좌측 세로 눈금
+            for (int mm = 0; mm <= heightMm; mm++) {
+                int y = mm * dpm;
+                int len = (mm % 10 == 0) ? (int) (w * 0.25) : (mm % 5 == 0) ? (int) (w * 0.15) : (int) (w * 0.07);
+                g.drawLine(0, y, len, y);
             }
         } finally {
             g.dispose();
@@ -125,11 +159,12 @@ public class LabelRasterizer {
         }
     }
 
-    private void drawBarcode(Graphics2D g, String data, int x, int y, int widthPx, int heightPx) {
+    private void drawBarcode(Graphics2D g, String data, int x, int y, int widthPx, int heightPx, boolean gs1) {
         if (data == null || data.isEmpty() || widthPx <= 0 || heightPx <= 0) return;
         try {
             Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
             hints.put(EncodeHintType.MARGIN, 10); // 좌우 콰이엇존(px)
+            if (gs1) hints.put(EncodeHintType.GS1_FORMAT, true); // GS1-128(FNC1)
             BitMatrix m = new Code128Writer().encode(data, BarcodeFormat.CODE_128, widthPx, heightPx, hints);
             g.drawImage(MatrixToImageWriter.toBufferedImage(m), x, y, null);
         } catch (Exception e) {

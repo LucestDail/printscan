@@ -83,6 +83,27 @@ public class LabelApiController {
         }
     }
 
+    /** mm 눈금자 미리보기(PNG) — 자 없이 인쇄 가능폭 확인. */
+    @GetMapping(value = "/ruler", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> ruler(@RequestParam(defaultValue = "60") int widthMm,
+                                        @RequestParam(defaultValue = "25") int heightMm,
+                                        @RequestParam(defaultValue = "203") int dpi) {
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(service.rulerPng(widthMm, heightMm, dpi));
+    }
+
+    /** mm 눈금자 실제 인쇄. */
+    @PostMapping("/ruler/print")
+    public ResponseEntity<String> printRuler(@RequestParam(defaultValue = "60") int widthMm,
+                                             @RequestParam(defaultValue = "25") int heightMm,
+                                             @RequestParam(defaultValue = "203") int dpi) {
+        try {
+            service.printRuler(widthMm, heightMm, dpi);
+            return ResponseEntity.ok("눈금자를 인쇄했습니다. 잘리는 지점이 실제 인쇄 가능폭입니다.");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
+        }
+    }
+
     /** 미디어 자동 캘리브레이션(~JC) — 라벨 크기/갭 재측정으로 잘림/치우침 교정. */
     @PostMapping("/calibrate")
     public ResponseEntity<String> calibrate() {

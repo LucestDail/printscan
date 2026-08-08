@@ -34,6 +34,15 @@ sudo systemctl restart printscan-cloud
 - 디바이스는 `PRINTSCAN_CLOUD_BASE_URL=https://hub.example.com` + 조직별 `ORG_API_KEY`(테넌트 격리).
 - 관리자 대시보드는 `X-Admin-Token` 필요(향후 로그인 UI로 대체 예정).
 
+## DB: 온프렘 H2 → SaaS Postgres
+- **온프렘(기본)**: H2 파일(`application.properties`). 무설정.
+- **SaaS**: `--spring.profiles.active=prod` → `application-prod.properties`(Postgres, env `DB_URL`/`DB_USER`/`DB_PASSWORD`). postgresql 드라이버 포함.
+  ```bash
+  DB_URL=jdbc:postgresql://db.internal:5432/printscan DB_USER=printscan DB_PASSWORD=*** \
+  PRINTSCAN_HUB_ADMIN_TOKEN=*** java -jar app.jar --server.port=8092 --spring.profiles.active=prod
+  ```
+- 현재 prod 는 `ddl-auto=update`(부트스트랩 용이). **스키마 안정 후 Flyway + `validate` 전환 권장**(마이그레이션 스크립트는 스키마 확정 시 생성 — 무검증 DDL 선반영 회피).
+
 ## 통신/보안 요약
 - 디바이스 → 허브: **아웃바운드 HTTP 폴링**(방화벽/NAT 친화). 인쇄지시는 허브 큐 → 폴링 수령.
 - 온프렘 LAN: TLS/공인인증 불필요(폐쇄망). SaaS: TLS + admin-token + 테넌트 격리.

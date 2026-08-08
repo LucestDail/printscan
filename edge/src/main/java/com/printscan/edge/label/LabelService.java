@@ -130,6 +130,25 @@ public class LabelService {
         }
     }
 
+    /** mm 눈금자 PNG(미리보기). */
+    public byte[] rulerPng(int widthMm, int heightMm, int dpi) {
+        try {
+            BufferedImage img = rasterizer.renderRuler(widthMm, heightMm, dpi);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(img, "png", baos);
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException("눈금자 렌더 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /** mm 눈금자 실제 인쇄(미디어보다 넓게 뽑아 잘리는 지점=인쇄 가능폭). */
+    public void printRuler(int widthMm, int heightMm, int dpi) throws Exception {
+        BufferedImage img = rasterizer.renderRuler(widthMm, heightMm, dpi);
+        printService.print(ZplGraphicEncoder.wrapLabel(img, 1, printerProps.getDarkness(), printerProps.getSpeed()));
+        log.info("[label] 눈금자 인쇄 {}x{}mm", widthMm, heightMm);
+    }
+
     /** 미디어 자동 캘리브레이션(~JC) — 라벨 길이/갭 재측정. 잘림/치우침 교정. */
     public void calibrate() throws Exception {
         printService.print("^XA~JC^XZ");

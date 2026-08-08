@@ -26,7 +26,7 @@ public class I18nController {
             "toast.codeNameReq", "toast.registerFail", "toast.registered",
             // designer (props panel + toasts, JS 생성)
             "designer.p.type", "designer.p.value", "designer.p.x", "designer.p.y",
-            "designer.p.textH", "designer.p.bold", "designer.p.qrSize", "designer.w", "designer.h",
+            "designer.p.textH", "designer.p.bold", "designer.p.qrSize", "designer.p.gs1", "designer.w", "designer.h",
             "designer.selectEl", "designer.varsNote", "designer.savedTpl",
             "designer.t.jsonErr", "designer.t.batchFail", "designer.t.previewFail", "designer.t.unnamed",
             "designer.t.loadFail", "designer.t.saveFail", "designer.t.saved",

@@ -40,4 +40,7 @@ public class LabelElement {
     /** TEXT: 굵게 여부. */
     @JsonProperty("bold")
     private boolean bold = false;
+    /** BARCODE: GS1-128(FNC1) 여부. */
+    @JsonProperty("gs1")
+    private boolean gs1 = false;
 }

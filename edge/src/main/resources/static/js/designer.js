@@ -152,7 +152,8 @@ function renderProps(valuesOnly) {
     html += `<label>${t('designer.p.qrSize')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}">`;
   } else if (e.type === 'BARCODE') {
     html += `<div class="size-row"><div><label>${t('designer.w')}</label><input data-k="widthMm" type="number" step="0.5" value="${e.widthMm}"></div>
-             <div><label>${t('designer.h')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}"></div></div>`;
+             <div><label>${t('designer.h')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}"></div></div>
+             <label><input data-k="gs1" type="checkbox" ${e.gs1 ? 'checked' : ''} style="width:auto;margin-right:6px;">${t('designer.p.gs1')}</label>`;
   } else if (e.type === 'BOX') {
     html += `<div class="size-row"><div><label>${t('designer.w')}</label><input data-k="widthMm" type="number" step="0.5" value="${e.widthMm}"></div>
              <div><label>${t('designer.h')}</label><input data-k="heightMm" type="number" step="0.5" value="${e.heightMm}"></div></div>`;
@@ -163,7 +164,7 @@ function renderProps(valuesOnly) {
       const k = inp.dataset.k;
       const e2 = elements[selected];
       if (k === 'value') e2.value = inp.value;
-      else if (k === 'bold') e2.bold = inp.checked;
+      else if (inp.type === 'checkbox') e2[k] = inp.checked;
       else e2[k] = parseFloat(inp.value) || 0;
       draw(); syncJson(); schedulePreview();
       if (k === 'value') refreshVariables();

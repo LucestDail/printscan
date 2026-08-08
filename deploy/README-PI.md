@@ -27,6 +27,11 @@ sudo systemctl restart printscan-edge
 - 프린터 스모크: `printf '^XA^FO40,40^A0N,40,40^FDHELLO^FS^XZ' | lp -d zebra -o raw`
 - 부팅 자동 상주 + 크래시 자동재시작(systemd Restart=always).
 
+## 폰트(한글) / 프린터 상태 / 눈금자
+- **폰트**: `install-edge.sh` 가 `fonts-noto-cjk` 설치. 호스트 독립(이미지 재현성) 원하면 TTF 를 넣고 `PRINTSCAN_LABEL_FONT_PATH=/opt/printscan-edge/font.ttf` 지정(패밀리명보다 우선).
+- **프린터 상태**(용지없음/헤드열림): `GET /api/printer/status`. **network(9100) 모드만 지원**(USB/CUPS는 단방향 → supported=false).
+- **라벨 실측(자 없이)**: `POST /api/labels/ruler/print?widthMm=60` 로 mm 눈금자 인쇄 → 잘리는 지점이 실제 인쇄 가능폭. 미리보기 `GET /api/labels/ruler?widthMm=60`.
+
 ## 트러블슈팅
 - 한글 안 나옴 → `fc-list | grep -i "CJK KR"` 확인, 없으면 `sudo apt install fonts-noto-cjk`.
 - 인쇄 안 됨 → 유저 `printscan` 이 `lp` 그룹인지(`id printscan`), CUPS 큐 `lpstat -p zebra`.
