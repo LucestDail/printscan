@@ -16,6 +16,7 @@ public class InventorySnapshot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long orgId;
     private Long deviceId;
     private String code;
     private String name;

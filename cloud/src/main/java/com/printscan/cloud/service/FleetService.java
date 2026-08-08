@@ -99,6 +99,7 @@ public class FleetService {
                 String code = String.valueOf(row.get("code"));
                 InventorySnapshot s = snapshots.findByDeviceIdAndCode(d.getId(), code)
                         .orElseGet(InventorySnapshot::new);
+                s.setOrgId(d.getOrgId());
                 s.setDeviceId(d.getId());
                 s.setCode(code);
                 s.setName(String.valueOf(row.getOrDefault("name", "")));
@@ -111,11 +112,12 @@ public class FleetService {
 
     // ── 네트워크 출력: 잡 큐잉 ──
     @Transactional
-    public PrintJobCloud enqueuePrint(Long deviceId, double widthMm, double heightMm, Integer dpi,
+    public PrintJobCloud enqueuePrint(Long callerOrgId, Long deviceId, double widthMm, double heightMm, Integer dpi,
                                       String elementsJson, String variablesJson, int copies,
                                       String seqVar, String serialPrefix, Integer serialStart,
                                       Integer serialCount, Integer serialPad) {
         Device d = devices.findById(deviceId).orElseThrow(() -> new IllegalArgumentException("device 없음"));
+        if (!d.getOrgId().equals(callerOrgId)) throw new IllegalArgumentException("이 조직의 장비가 아닙니다."); // 테넌트 격리
         PrintJobCloud job = new PrintJobCloud();
         job.setOrgId(d.getOrgId());
         job.setDeviceId(deviceId);
@@ -133,20 +135,21 @@ public class FleetService {
         return jobs.save(job);
     }
 
-    // ── 조회/집계 ──
+    // ── 조회/집계 (전부 org 스코프 — 테넌트 격리) ──
     @Transactional(readOnly = true)
-    public List<Device> allDevices() { return devices.findAll(); }
+    public List<Device> allDevices(Long orgId) { return devices.findByOrgIdOrderByIdAsc(orgId); }
 
     @Transactional(readOnly = true)
-    public List<PrintJobCloud> recentJobs() { return jobs.findTop20ByOrderByIdDesc(); }
+    public List<PrintJobCloud> recentJobs(Long orgId) { return jobs.findTop20ByOrgIdOrderByIdDesc(orgId); }
 
     @Transactional(readOnly = true)
-    public List<InventorySnapshot> allSnapshots() { return snapshots.findByOrderByUpdatedAtDesc(); }
+    public List<InventorySnapshot> allSnapshots(Long orgId) { return snapshots.findByOrgIdOrderByUpdatedAtDesc(orgId); }
 
     // ── 소비(출고) 업싱크 + 집계 ──
     @Transactional
     public void recordConsumption(Device d, String code, int qty, String operator, String line, boolean fromPrint) {
         ConsumptionLog c = new ConsumptionLog();
+        c.setOrgId(d.getOrgId());
         c.setDeviceId(d.getId());
         c.setLine(line != null && !line.isBlank() ? line : d.getLine());
         c.setOperator(operator);
@@ -157,12 +160,12 @@ public class FleetService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> consumption() {
+    public Map<String, Object> consumption(Long orgId) {
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("byLine", toMap(consumptions.sumByLine()));
-        out.put("byOperator", toMap(consumptions.sumByOperator()));
-        out.put("byProduct", toMap(consumptions.sumByProduct()));
-        out.put("total", consumptions.totalQty());
+        out.put("byLine", toMap(consumptions.sumByLine(orgId)));
+        out.put("byOperator", toMap(consumptions.sumByOperator(orgId)));
+        out.put("byProduct", toMap(consumptions.sumByProduct(orgId)));
+        out.put("total", consumptions.totalQty(orgId));
         return out;
     }
 
@@ -178,14 +181,15 @@ public class FleetService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> stats() {
-        long totalPrinted = devices.findAll().stream().mapToLong(Device::getPrintCount).sum();
-        long online = devices.findAll().stream().filter(Device::isOnline).count();
+    public Map<String, Object> stats(Long orgId) {
+        List<Device> ds = devices.findByOrgIdOrderByIdAsc(orgId);
+        long totalPrinted = ds.stream().mapToLong(Device::getPrintCount).sum();
+        long online = ds.stream().filter(Device::isOnline).count();
         return Map.of(
-                "devices", devices.count(),
+                "devices", ds.size(),
                 "online", online,
                 "totalPrinted", totalPrinted,
-                "queued", jobs.countByStatus(PrintJobCloud.Status.QUEUED)
+                "queued", jobs.countByOrgIdAndStatus(orgId, PrintJobCloud.Status.QUEUED)
         );
     }
 }

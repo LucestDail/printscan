@@ -23,13 +23,15 @@ class FleetServiceTest {
 
     private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons); }
 
-    private Device device() {
-        Organization o = new Organization(); o.setName("o"); o.setApiKey("K"); orgs.save(o);
-        return svc().register("K", "dev", "cups", "line1");
+    private Device device() { return device("K"); }
+
+    private Device device(String apiKey) {
+        Organization o = new Organization(); o.setName("o-" + apiKey); o.setApiKey(apiKey); orgs.save(o);
+        return svc().register(apiKey, "dev", "cups", "line1");
     }
 
     private void enqueue(Device d) {
-        svc().enqueuePrint(d.getId(), 40, 25, 203, "[]", "{}", 1, null, null, null, null, null);
+        svc().enqueuePrint(d.getOrgId(), d.getId(), 40, 25, 203, "[]", "{}", 1, null, null, null, null, null);
     }
 
     @Test
@@ -59,6 +61,19 @@ class FleetServiceTest {
         s.ack(devices.findById(d.getId()).get(), j.getId(), true, "dup");
         em.flush(); em.clear();
         assertEquals(1, devices.findById(d.getId()).get().getPrintCount(), "중복 ack 로 카운트 증가 금지");
+    }
+
+    @Test
+    void 교차_org_격리() {
+        FleetService s = svc();
+        Device a = device("KA");                       // org A + 장비
+        Organization b = new Organization(); b.setName("B"); b.setApiKey("KB"); orgs.save(b);
+        // B 스코프로 A 장비에 인쇄 지시 → 거부
+        assertThrows(IllegalArgumentException.class,
+                () -> s.enqueuePrint(b.getId(), a.getId(), 40, 25, 203, "[]", "{}", 1, null, null, null, null, null));
+        // B 는 A 의 장비를 볼 수 없음
+        assertTrue(s.allDevices(b.getId()).isEmpty());
+        assertEquals(1, s.allDevices(a.getOrgId()).size());
     }
 
     @Test

@@ -6,5 +6,5 @@ import java.util.Optional;
 
 public interface InventorySnapshotRepository extends JpaRepository<InventorySnapshot, Long> {
     Optional<InventorySnapshot> findByDeviceIdAndCode(Long deviceId, String code);
-    List<InventorySnapshot> findByOrderByUpdatedAtDesc();
+    List<InventorySnapshot> findByOrgIdOrderByUpdatedAtDesc(Long orgId);
 }

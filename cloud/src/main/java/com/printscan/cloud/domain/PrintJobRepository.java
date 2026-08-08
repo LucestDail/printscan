@@ -11,8 +11,8 @@ import java.util.Optional;
 
 public interface PrintJobRepository extends JpaRepository<PrintJobCloud, Long> {
     Optional<PrintJobCloud> findFirstByDeviceIdAndStatusOrderByIdAsc(Long deviceId, PrintJobCloud.Status status);
-    List<PrintJobCloud> findTop20ByOrderByIdDesc();
-    long countByStatus(PrintJobCloud.Status status);
+    List<PrintJobCloud> findTop20ByOrgIdOrderByIdDesc(Long orgId);
+    long countByOrgIdAndStatus(Long orgId, PrintJobCloud.Status status);
 
     /** 원자적 잡 클레임: QUEUED 인 경우에만 SENT 로 전이. 반환 1=내가 획득, 0=다른 폴이 가져감. */
     @Modifying(clearAutomatically = true, flushAutomatically = true)

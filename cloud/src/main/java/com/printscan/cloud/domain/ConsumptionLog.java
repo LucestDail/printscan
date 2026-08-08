@@ -16,6 +16,7 @@ public class ConsumptionLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long orgId;
     private Long deviceId;
     private String line;
     private String operator;
