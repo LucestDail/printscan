@@ -14,7 +14,8 @@ class InventoryServiceTest {
     @Autowired InventoryMovementRepository movements;
 
     private InventoryService svc() {
-        return new InventoryService(products, movements, event -> { /* no-op publisher */ });
+        return new InventoryService(products, movements, event -> { /* no-op publisher */ },
+                new com.printscan.edge.config.AlertService(""));
     }
 
     private Product product(String code, int qty) {

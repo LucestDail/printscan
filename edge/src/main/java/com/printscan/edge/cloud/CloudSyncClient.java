@@ -44,6 +44,10 @@ public class CloudSyncClient {
 
     private volatile String token;
     private volatile Long deviceId;
+    private volatile long lastContactMs = 0; // 허브 마지막 성공 접촉(HealthIndicator용)
+
+    public boolean isEnabled() { return props.isEnabled(); }
+    public long lastContactMs() { return lastContactMs; }
 
     public CloudSyncClient(CloudSyncProperties props, DeviceIdentityRepository identityRepo,
                            LabelService labelService, InventoryService inventory,
@@ -104,6 +108,7 @@ public class CloudSyncClient {
         try {
             Map<?, ?> job = http.get().uri("/api/device/jobs/next")
                     .header("X-Device-Token", token).retrieve().body(Map.class);
+            lastContactMs = System.currentTimeMillis(); // 폴 성공(잡 유무 무관) = 허브 연결 정상
             if (job == null || job.get("id") == null) return;
             Long jobId = ((Number) job.get("id")).longValue();
             boolean ok = true; String msg = "printed";

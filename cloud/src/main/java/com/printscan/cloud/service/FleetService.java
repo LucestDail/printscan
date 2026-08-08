@@ -25,6 +25,19 @@ public class FleetService {
     private final PrintJobRepository jobs;
     private final InventorySnapshotRepository snapshots;
     private final ConsumptionLogRepository consumptions;
+    private final AlertService alerts;
+
+    /** 오프라인 디바이스 알림(60초 주기). 한때 접속했던 장비가 60초+ 미접속이면 경고. */
+    @Scheduled(fixedDelay = 60000)
+    @Transactional(readOnly = true)
+    public void offlineCheck() {
+        for (Device d : devices.findAll()) {
+            if (d.getLastSeenAt() != null && !d.isOnline()) {
+                alerts.alert("WARN", "offline:" + d.getId(),
+                        "디바이스 오프라인: #" + d.getId() + " " + d.getName() + " (라인 " + d.getLine() + ")");
+            }
+        }
+    }
 
     // ── 디바이스 등록(아웃바운드) ──
     @Transactional

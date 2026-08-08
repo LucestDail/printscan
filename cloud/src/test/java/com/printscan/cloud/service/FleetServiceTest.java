@@ -21,7 +21,7 @@ class FleetServiceTest {
     @Autowired ConsumptionLogRepository cons;
     @Autowired TestEntityManager em;
 
-    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons); }
+    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons, new AlertService("")); }
 
     private Device device() { return device("K"); }
 

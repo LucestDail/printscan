@@ -27,6 +27,12 @@ sudo systemctl restart printscan-edge
 - 프린터 스모크: `printf '^XA^FO40,40^A0N,40,40^FDHELLO^FS^XZ' | lp -d zebra -o raw`
 - 부팅 자동 상주 + 크래시 자동재시작(systemd Restart=always).
 
+## 백업 / 복원 / 관측성 / 알림
+- **백업**: `BackupService` 가 매일 03:00 로컬 H2 를 `data/backup/printscan-<날짜>.zip` 으로 자동 백업(H2만; Postgres 는 pg_dump 별도).
+- **복원**: `sudo bash deploy/restore.sh <backup.zip> printscan-edge /opt/printscan-edge/data` — 서비스 중지→기존 data 보존→unzip→재시작(롤백 안내 포함).
+- **헬스**: `GET /actuator/health` 에 `printer`(mode별 실도달성)·`cloud`(허브 연결) 구성요소 포함. `GET /actuator/prometheus` 메트릭.
+- **알림**: `PRINTSCAN_ALERT_WEBHOOK` 설정 시 저재고·프린터 미발견·백업 실패를 webhook(ntfy/Slack 호환 JSON)으로 발송(+WARN 로그). 미설정이면 로그만.
+
 ## 폰트(한글) / 프린터 상태 / 눈금자
 - **폰트**: `install-edge.sh` 가 `fonts-noto-cjk` 설치. 호스트 독립(이미지 재현성) 원하면 TTF 를 넣고 `PRINTSCAN_LABEL_FONT_PATH=/opt/printscan-edge/font.ttf` 지정(패밀리명보다 우선).
 - **프린터 상태**(용지없음/헤드열림): `GET /api/printer/status`. **network(9100) 모드만 지원**(USB/CUPS는 단방향 → supported=false).

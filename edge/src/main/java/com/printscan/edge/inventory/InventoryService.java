@@ -1,5 +1,6 @@
 package com.printscan.edge.inventory;
 
+import com.printscan.edge.config.AlertService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,6 +19,12 @@ public class InventoryService {
     private final ProductRepository products;
     private final InventoryMovementRepository movements;
     private final ApplicationEventPublisher events;
+    private final AlertService alerts;
+
+    private void checkLowStock(Product p) {
+        if (p.isLowStock()) alerts.alert("WARN", "lowstock:" + p.getCode(),
+                "재고 부족: " + p.getCode() + " (" + p.getQuantity() + " ≤ min " + p.getMinQty() + ")");
+    }
 
     // ── 제품 ──────────────────────────────
     @Transactional(readOnly = true)
@@ -72,6 +79,7 @@ public class InventoryService {
         Product fresh = products.findById(p.getId()).orElseThrow();
         InventoryMovement m = record(fresh, type, applied, fresh.getQuantity(), note, operator, line, fromPrint);
         log.info("[inventory] {} {} {} → {} (op={}, line={})", type, code, applied, fresh.getQuantity(), operator, line);
+        checkLowStock(fresh);
         return m;
     }
 
@@ -89,6 +97,7 @@ public class InventoryService {
         InventoryMovement m = record(fresh, InventoryMovement.Type.OUT, applied, fresh.getQuantity(),
                 "print", operator, line, true);
         log.info("[inventory] 인쇄 자동출고 {} {} → {} (op={}, line={})", code, applied, fresh.getQuantity(), operator, line);
+        checkLowStock(fresh);
         return m;
     }
 

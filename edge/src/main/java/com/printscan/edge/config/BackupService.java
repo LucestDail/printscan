@@ -17,13 +17,16 @@ public class BackupService {
     private final JdbcTemplate jdbc;
     private final String dbUrl;
     private final String dir;
+    private final AlertService alerts;
 
     public BackupService(JdbcTemplate jdbc,
                          @Value("${spring.datasource.url:}") String dbUrl,
-                         @Value("${printscan.backup.dir:./data/backup}") String dir) {
+                         @Value("${printscan.backup.dir:./data/backup}") String dir,
+                         AlertService alerts) {
         this.jdbc = jdbc;
         this.dbUrl = dbUrl;
         this.dir = dir;
+        this.alerts = alerts;
     }
 
     @Scheduled(cron = "${printscan.backup.cron:0 0 3 * * *}") // 매일 03:00
@@ -38,7 +41,7 @@ public class BackupService {
             jdbc.execute("BACKUP TO '" + path + "'");
             log.info("[backup] 완료: {}", path);
         } catch (Exception e) {
-            log.warn("[backup] 실패: {}", e.getMessage());
+            alerts.alert("ERROR", "backup", "DB 백업 실패: " + e.getMessage());
         }
     }
 }
