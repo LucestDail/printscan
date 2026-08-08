@@ -8,6 +8,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link th:href="@{/design/tokens.css}" rel="stylesheet">
   <link th:href="@{/design/components.css}" rel="stylesheet">
+  <style>
+    .wrap { max-width: var(--content-max); margin: 0 auto; padding: var(--space-lg); }
+    .status { display:grid; grid-template-columns: repeat(4,1fr); gap: var(--space-lg); margin-bottom: var(--space-lg); }
+    @media (max-width:800px){ .status{grid-template-columns:repeat(2,1fr);} }
+    .stat { background: var(--color-canvas); border: var(--border-hairline); border-radius: var(--radius-lg); padding: var(--space-lg); }
+    .stat .n { font-family: var(--font-display); font-size: 32px; font-weight: 600; }
+    .stat .l { color: var(--color-ink-muted-48); font-size: var(--t-caption-size); }
+    .cards { display:grid; grid-template-columns: repeat(3,1fr); gap: var(--space-lg); }
+    @media (max-width:800px){ .cards{grid-template-columns:1fr;} }
+    .feature { display:block; text-decoration:none; color:var(--color-ink); background: var(--color-canvas);
+               border: var(--border-hairline); border-radius: var(--radius-lg); padding: var(--space-xl); transition: transform .1s ease; }
+    .feature:active { transform: scale(0.99); }
+    .feature .ic { font-size: 30px; }
+    .feature h3 { margin: var(--space-sm) 0 4px; font-size: var(--t-tagline-size); font-weight:600; }
+    .feature p { margin:0; color: var(--color-ink-muted-48); font-size: var(--t-caption-size); }
+    .dot { width:8px; height:8px; border-radius:50%; background:#2ecc71; display:inline-block; margin-right:6px; }
+  </style>
 </head>
 <body>
 
@@ -15,32 +32,47 @@
   <strong style="font-size:14px;">▪ printscan</strong>
   <a th:href="@{/}">홈</a>
   <a th:href="@{/designer}">라벨 디자이너</a>
+  <a th:href="@{/scan}">스캔·재고</a>
   <span class="spacer"></span>
-  <span class="t-fine-print" style="opacity:.7;">mode: <span th:text="${printerMode}">cups</span></span>
+  <span class="t-fine-print" style="opacity:.7;"><span class="dot"></span>라인 <span th:text="${printerMode}">cups</span></span>
 </nav>
 
-<section class="tile tile-light">
-  <h1 class="t-hero headline">현장에서, 클라우드까지.</h1>
-  <p class="t-lead tagline">라즈베리파이 하나로 라벨을 디자인하고, 인쇄하고, 통합 관리하세요.</p>
-  <div class="ctas">
-    <a class="btn btn-primary" th:href="@{/designer}">라벨 디자이너 열기</a>
-    <a class="btn btn-secondary-pill" href="/h2-console">DB 콘솔</a>
-  </div>
+<section class="tile tile-light" style="padding: var(--space-xl) var(--space-lg);">
+  <h1 class="t-display-lg headline" style="margin:0;">온디바이스 라벨 관리</h1>
+  <p class="t-lead tagline" style="margin:6px 0 0;">이 라인에서 디자인하고, 인쇄하고, 재고를 관리하세요.</p>
 </section>
 
-<section class="tile tile-dark">
-  <h2 class="t-display-lg headline">엔터프라이즈급 라벨 엔진</h2>
-  <p class="t-lead tagline" style="color:var(--color-body-muted)">
-    한글·QR·바코드를 서버에서 렌더 — 화면과 인쇄물이 완전히 같습니다.
-  </p>
-</section>
-
-<footer class="footer">
-  <div style="max-width:var(--content-max);margin:0 auto;">
-    <div class="col-head">printscan edge · 온디바이스</div>
-    <div class="legal">© 2026 printscan · 로컬퍼스트 + 클라우드 동기화(예정)</div>
+<div class="wrap">
+  <div class="status">
+    <div class="stat"><div class="n" id="sLine">–</div><div class="l">라인</div></div>
+    <div class="stat"><div class="n" id="sMode">–</div><div class="l">프린터 모드</div></div>
+    <div class="stat"><div class="n" id="sProducts">–</div><div class="l">등록 제품</div></div>
+    <div class="stat"><div class="n" id="sLow">–</div><div class="l">재고 부족</div></div>
   </div>
-</footer>
 
+  <div class="cards">
+    <a class="feature" th:href="@{/designer}">
+      <div class="ic">🏷️</div><h3>라벨 디자이너</h3>
+      <p>드래그로 라벨을 만들고 실시간 미리보기·인쇄. 한글·QR·바코드·일련번호 배치.</p>
+    </a>
+    <a class="feature" th:href="@{/scan}">
+      <div class="ic">📦</div><h3>스캔 · 재고</h3>
+      <p>바코드 스캔으로 제품 조회·입출고. 인쇄 시 자동 출고로 소비 추적.</p>
+    </a>
+    <a class="feature" href="/h2-console" target="_blank">
+      <div class="ic">🗄️</div><h3>로컬 DB</h3>
+      <p>온디바이스 데이터(오프라인 동작). 점검용 H2 콘솔.</p>
+    </a>
+  </div>
+</div>
+
+<script>
+  fetch('/api/health').then(r=>r.json()).then(h=>{
+    document.getElementById('sLine').textContent = h.line || '-';
+    document.getElementById('sMode').textContent = h.printerMode || '-';
+    document.getElementById('sProducts').textContent = h.products ?? 0;
+    document.getElementById('sLow').textContent = h.lowStock ?? 0;
+  }).catch(()=>{});
+</script>
 </body>
 </html>
