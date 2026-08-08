@@ -95,17 +95,21 @@ public class LabelService {
     /** 일련번호 배치 인쇄: seqVar 를 증가시키며 count 장 연속 출력. 소비는 고정 제품코드×count. */
     public void printBatch(RenderRequest base, SerialSpec spec) throws Exception {
         int count = Math.max(1, spec.count());
-        for (int i = 0; i < count; i++) {
-            Map<String, String> vars = new java.util.LinkedHashMap<>(
-                    base.variables() == null ? Map.of() : base.variables());
-            vars.put(spec.var(), spec.format(i));
-            RenderRequest r = new RenderRequest(base.id(), base.name(), base.widthMm(), base.heightMm(),
-                    base.dpi(), base.elementsJson(), vars, 1, base.operator());
-            renderAndSend(r, 1);
+        int printed = 0;
+        try {
+            for (int i = 0; i < count; i++) {
+                Map<String, String> vars = new java.util.LinkedHashMap<>(
+                        base.variables() == null ? Map.of() : base.variables());
+                vars.put(spec.var(), spec.format(i));
+                RenderRequest r = new RenderRequest(base.id(), base.name(), base.widthMm(), base.heightMm(),
+                        base.dpi(), base.elementsJson(), vars, 1, base.operator());
+                renderAndSend(r, 1);
+                consume(base.variables(), 1, base.operator()); // 라벨별 소비 → 중간 실패해도 드리프트 없음
+                printed++;
+            }
+        } finally {
+            log.info("[label] 배치 인쇄 {}/{}장: {}~", printed, count, spec.format(0));
         }
-        log.info("[label] 배치 인쇄 {}장: {}~{}", count, spec.format(0), spec.format(count - 1));
-        // 배치 소비: 고정 변수(제품코드 등)를 count 만큼. seq 값은 제품이 아니므로 no-op.
-        consume(base.variables(), count, base.operator());
     }
 
     private void renderAndSend(RenderRequest req, int copies) throws Exception {

@@ -26,7 +26,12 @@ public class AdminAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = hub.getAdminToken();
         if (token != null && !token.isBlank() && req.getRequestURI().startsWith("/api/admin/")) {
-            if (!token.equals(req.getHeader("X-Admin-Token"))) {
+            String given = req.getHeader("X-Admin-Token");
+            // 상수시간 비교(타이밍 공격 방지)
+            boolean ok = given != null && java.security.MessageDigest.isEqual(
+                    token.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    given.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            if (!ok) {
                 res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "admin token required");
                 return;
             }

@@ -56,38 +56,39 @@ public class InventoryService {
     public InventoryMovement move(String code, InventoryMovement.Type type, int qty, String note,
                                   String operator, String line, boolean fromPrint) {
         Product p = byCode(code);
-        int delta = switch (type) {
-            case IN -> Math.abs(qty);
-            case OUT -> -Math.abs(qty);
-            case ADJUST -> qty; // 절대 조정: qty 를 목표치로 → delta 계산
-        };
-        int result = (type == InventoryMovement.Type.ADJUST) ? qty : p.getQuantity() + delta;
-        if (result < 0) throw new IllegalArgumentException("재고가 음수가 됩니다(현재=" + p.getQuantity() + ", 요청=" + delta + ")");
-
-        int applied = (type == InventoryMovement.Type.ADJUST) ? (qty - p.getQuantity()) : delta;
-        p.setQuantity(result);
-        products.save(p);
-
-        InventoryMovement m = record(p, type, applied, result, note, operator, line, fromPrint);
-        log.info("[inventory] {} {} {} → {} (op={}, line={})", type, p.getCode(), applied, result, operator, line);
+        int before = p.getQuantity();
+        int abs = Math.abs(qty);
+        int applied;
+        switch (type) {
+            case IN -> { products.applyDelta(p.getId(), abs); applied = abs; }
+            case OUT -> {
+                if (products.applyDelta(p.getId(), -abs) == 0)  // 원자적: 음수면 미적용
+                    throw new IllegalArgumentException("재고가 부족합니다(현재=" + before + ", 출고=" + abs + ")");
+                applied = -abs;
+            }
+            case ADJUST -> { products.setQuantity(p.getId(), qty); applied = qty - before; }
+            default -> throw new IllegalArgumentException("알 수 없는 유형: " + type);
+        }
+        Product fresh = products.findById(p.getId()).orElseThrow();
+        InventoryMovement m = record(fresh, type, applied, fresh.getQuantity(), note, operator, line, fromPrint);
+        log.info("[inventory] {} {} {} → {} (op={}, line={})", type, code, applied, fresh.getQuantity(), operator, line);
         return m;
     }
 
     /**
-     * 인쇄=자동 출고. 제품이 등록돼 있으면 인쇄 매수만큼 OUT 하고 라인/작업자 귀속.
-     * 재고 부족 시 0 으로 클램프(인쇄 자체는 막지 않음). 미등록 코드면 no-op(null).
+     * 인쇄=자동 출고. 등록 제품이면 인쇄 매수만큼 원자적 OUT(0 클램프, 인쇄는 막지 않음). 미등록이면 no-op.
      */
     @Transactional
     public InventoryMovement consumeForPrint(String code, int qty, String operator, String line) {
         Product p = products.findByCode(code).orElse(null);
         if (p == null || qty <= 0) return null;
-        int out = Math.min(qty, p.getQuantity());          // 0 미만 방지 클램프
-        int result = p.getQuantity() - out;
-        p.setQuantity(result);
-        products.save(p);
-        InventoryMovement m = record(p, InventoryMovement.Type.OUT, -out, result,
+        int before = p.getQuantity();
+        products.clampSubtract(p.getId(), qty);            // 원자적 차감(0 클램프)
+        Product fresh = products.findById(p.getId()).orElseThrow();
+        int applied = fresh.getQuantity() - before;        // ≤ 0
+        InventoryMovement m = record(fresh, InventoryMovement.Type.OUT, applied, fresh.getQuantity(),
                 "print", operator, line, true);
-        log.info("[inventory] 인쇄 자동출고 {} -{} → {} (op={}, line={})", code, out, result, operator, line);
+        log.info("[inventory] 인쇄 자동출고 {} {} → {} (op={}, line={})", code, applied, fresh.getQuantity(), operator, line);
         return m;
     }
 

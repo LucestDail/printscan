@@ -29,6 +29,9 @@ public class Product {
     private int minQty = 0;
     private int maxQty = 0;
 
+    @jakarta.persistence.Version
+    private Long version;   // 낙관적 락 — 동시 입출고 lost-update 방지
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

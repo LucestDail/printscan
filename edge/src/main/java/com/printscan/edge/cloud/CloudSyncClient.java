@@ -12,6 +12,7 @@ import com.printscan.edge.label.SerialSpec;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -164,6 +165,7 @@ public class CloudSyncClient {
     }
 
     /** 소비(OUT) 업싱크 → 라인/작업자별 집계. 트랜잭션 커밋 후 실행(인쇄/DB 경로를 블록하지 않음). */
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onMoved(InventoryService.InventoryMovedEvent ev) {
         if (!props.isEnabled() || token == null) return;
