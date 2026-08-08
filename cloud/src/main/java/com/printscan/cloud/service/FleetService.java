@@ -6,12 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.scheduling.annotation.Scheduled;
+
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /** 플릿 관리 핵심 — 디바이스 등록/폴링/ack/하트비트/재고 업싱크 + 네트워크 출력 큐잉/집계. */
 @Slf4j
@@ -46,34 +47,44 @@ public class FleetService {
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 deviceToken"));
     }
 
-    // ── 폴링: 다음 QUEUED 잡 수령(→SENT) ──
+    // ── 폴링: 다음 QUEUED 잡을 원자적으로 클레임(→SENT) ──
     @Transactional
     public PrintJobCloud pollNext(Device d) {
         d.setLastSeenAt(LocalDateTime.now());
         devices.save(d);
-        PrintJobCloud job = jobs.findFirstByDeviceIdAndStatusOrderByIdAsc(d.getId(), PrintJobCloud.Status.QUEUED)
+        PrintJobCloud candidate = jobs.findFirstByDeviceIdAndStatusOrderByIdAsc(d.getId(), PrintJobCloud.Status.QUEUED)
                 .orElse(null);
-        if (job != null) {
-            job.setStatus(PrintJobCloud.Status.SENT);
-            job.setSentAt(LocalDateTime.now());
-            jobs.save(job);
-            log.info("[fleet] device {} 폴링 → job {} 전달", d.getId(), job.getId());
-        }
-        return job;
+        if (candidate == null) return null;
+        int claimed = jobs.claim(candidate.getId(), LocalDateTime.now());
+        if (claimed == 0) return null; // 동시 폴이 먼저 가져감 → 이번엔 없음
+        log.info("[fleet] device {} 폴링 → job {} 전달", d.getId(), candidate.getId());
+        return jobs.findById(candidate.getId()).orElse(null); // SENT 로 재로딩
     }
 
-    // ── 인쇄 결과 ack ──
+    // ── 인쇄 결과 ack (SENT → DONE/FAILED, 멱등) ──
     @Transactional
     public void ack(Device d, Long jobId, boolean ok, String message) {
         PrintJobCloud job = jobs.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("job 없음: " + jobId));
         if (!job.getDeviceId().equals(d.getId())) throw new IllegalArgumentException("소유 불일치");
+        if (job.getStatus() != PrintJobCloud.Status.SENT) {
+            log.info("[fleet] job {} ack 무시(상태={})", jobId, job.getStatus()); // 재ack/중복 방지
+            return;
+        }
         job.setStatus(ok ? PrintJobCloud.Status.DONE : PrintJobCloud.Status.FAILED);
         job.setMessage(message);
         job.setDoneAt(LocalDateTime.now());
         jobs.save(job);
-        if (ok) { d.setPrintCount(d.getPrintCount() + 1); devices.save(d); }
+        if (ok) devices.incrementPrintCount(d.getId()); // 원자 증가
         log.info("[fleet] job {} ack={} ({})", jobId, ok, message);
+    }
+
+    // ── 리퍼: SENT 로 60초 이상 정체된 잡 재큐(디바이스가 ack 전 죽은 경우) ──
+    @Scheduled(fixedDelay = 30000)
+    @Transactional
+    public void requeueStaleJobs() {
+        int n = jobs.requeueStale(LocalDateTime.now().minusSeconds(60));
+        if (n > 0) log.info("[fleet] SENT 정체 잡 {}건 재큐", n);
     }
 
     // ── 하트비트 + 재고 업싱크 ──
@@ -147,20 +158,24 @@ public class FleetService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> consumption() {
-        List<ConsumptionLog> all = consumptions.findAll();
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("byLine", sumBy(all, c -> nz(c.getLine(), "(미지정)")));
-        out.put("byOperator", sumBy(all, c -> nz(c.getOperator(), "(미지정)")));
-        out.put("byProduct", sumBy(all, ConsumptionLog::getCode));
-        out.put("total", all.stream().mapToInt(ConsumptionLog::getQty).sum());
+        out.put("byLine", toMap(consumptions.sumByLine()));
+        out.put("byOperator", toMap(consumptions.sumByOperator()));
+        out.put("byProduct", toMap(consumptions.sumByProduct()));
+        out.put("total", consumptions.totalQty());
         return out;
     }
 
-    private Map<String, Integer> sumBy(List<ConsumptionLog> all, java.util.function.Function<ConsumptionLog, String> key) {
-        return all.stream().collect(Collectors.groupingBy(key, LinkedHashMap::new,
-                Collectors.summingInt(ConsumptionLog::getQty)));
+    /** SQL 집계 결과(List<[key, sum]>)를 순서 유지 맵으로. */
+    private Map<String, Long> toMap(List<Object[]> rows) {
+        Map<String, Long> m = new LinkedHashMap<>();
+        for (Object[] r : rows) {
+            String key = r[0] == null ? "(미지정)" : String.valueOf(r[0]);
+            long val = r[1] == null ? 0L : ((Number) r[1]).longValue();
+            m.put(key, val);
+        }
+        return m;
     }
-    private String nz(String s, String def) { return (s == null || s.isBlank()) ? def : s; }
 
     @Transactional(readOnly = true)
     public Map<String, Object> stats() {

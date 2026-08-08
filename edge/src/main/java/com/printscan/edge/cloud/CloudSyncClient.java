@@ -11,11 +11,14 @@ import com.printscan.edge.label.RenderRequest;
 import com.printscan.edge.label.SerialSpec;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,6 +37,7 @@ public class CloudSyncClient {
     private final InventoryService inventory;
     private final PrinterProperties printer;
     private final LineProperties line;
+    private final PrintedJobRepository printedJobs;
     private final ObjectMapper mapper = new ObjectMapper();
     private final RestClient http;
 
@@ -42,14 +46,27 @@ public class CloudSyncClient {
 
     public CloudSyncClient(CloudSyncProperties props, DeviceIdentityRepository identityRepo,
                            LabelService labelService, InventoryService inventory,
-                           PrinterProperties printer, LineProperties line) {
+                           PrinterProperties printer, LineProperties line,
+                           PrintedJobRepository printedJobs) {
         this.props = props;
         this.identityRepo = identityRepo;
         this.labelService = labelService;
         this.inventory = inventory;
         this.printer = printer;
         this.line = line;
-        this.http = RestClient.builder().baseUrl(props.getBaseUrl()).build();
+        this.printedJobs = printedJobs;
+        // 타임아웃 필수: 허브 반쯤열린 TCP 가 스케줄러 스레드를 무한 블록하지 않도록
+        SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
+        rf.setConnectTimeout((int) Duration.ofSeconds(2).toMillis());
+        rf.setReadTimeout((int) Duration.ofSeconds(5).toMillis());
+        this.http = RestClient.builder().baseUrl(props.getBaseUrl()).requestFactory(rf).build();
+    }
+
+    /** token 이 없으면(부팅 시 허브 불가 등) 재등록 시도. */
+    private boolean ensureRegistered() {
+        if (token != null) return true;
+        register();
+        return token != null;
     }
 
     @PostConstruct
@@ -82,7 +99,7 @@ public class CloudSyncClient {
     /** 인쇄 잡 폴링 → 로컬 래스터 인쇄 → ack. */
     @Scheduled(fixedDelayString = "${printscan.cloud.poll-ms:2000}")
     public void pollJobs() {
-        if (!props.isEnabled() || token == null) return;
+        if (!props.isEnabled() || !ensureRegistered()) return;
         try {
             Map<?, ?> job = http.get().uri("/api/device/jobs/next")
                     .header("X-Device-Token", token).retrieve().body(Map.class);
@@ -90,26 +107,33 @@ public class CloudSyncClient {
             Long jobId = ((Number) job.get("id")).longValue();
             boolean ok = true; String msg = "printed";
             try {
-                int serialCount = job.get("serialCount") != null ? ((Number) job.get("serialCount")).intValue() : 0;
-                RenderRequest base = new RenderRequest(
-                        null, "cloud-job",
-                        num(job.get("widthMm")), num(job.get("heightMm")),
-                        job.get("dpi") != null ? ((Number) job.get("dpi")).intValue() : null,
-                        (String) job.get("elementsJson"),
-                        parseVars((String) job.get("variablesJson")),
-                        job.get("copies") != null ? ((Number) job.get("copies")).intValue() : 1,
-                        "cloud");
-                if (serialCount > 1) {
-                    SerialSpec spec = new SerialSpec(
-                            (String) job.get("seqVar"), (String) job.get("serialPrefix"),
-                            job.get("serialStart") != null ? ((Number) job.get("serialStart")).intValue() : 1,
-                            serialCount,
-                            job.get("serialPad") != null ? ((Number) job.get("serialPad")).intValue() : 0);
-                    labelService.printBatch(base, spec);
-                    log.info("[cloud-sync] 네트워크 배치 출력 잡 {} ({}장) 완료", jobId, serialCount);
+                if (printedJobs.existsById(jobId)) {
+                    // ack 실패 후 재전달된 잡 → 재인쇄 금지(멱등), ack 만 재시도
+                    msg = "already-printed";
+                    log.info("[cloud-sync] 잡 {} 이미 인쇄됨 → 재인쇄 스킵", jobId);
                 } else {
-                    labelService.print(base);
-                    log.info("[cloud-sync] 네트워크 출력 잡 {} 인쇄 완료", jobId);
+                    int serialCount = job.get("serialCount") != null ? ((Number) job.get("serialCount")).intValue() : 0;
+                    RenderRequest base = new RenderRequest(
+                            null, "cloud-job",
+                            num(job.get("widthMm")), num(job.get("heightMm")),
+                            job.get("dpi") != null ? ((Number) job.get("dpi")).intValue() : null,
+                            (String) job.get("elementsJson"),
+                            parseVars((String) job.get("variablesJson")),
+                            job.get("copies") != null ? ((Number) job.get("copies")).intValue() : 1,
+                            "cloud");
+                    if (serialCount > 1) {
+                        SerialSpec spec = new SerialSpec(
+                                (String) job.get("seqVar"), (String) job.get("serialPrefix"),
+                                job.get("serialStart") != null ? ((Number) job.get("serialStart")).intValue() : 1,
+                                serialCount,
+                                job.get("serialPad") != null ? ((Number) job.get("serialPad")).intValue() : 0);
+                        labelService.printBatch(base, spec);
+                        log.info("[cloud-sync] 네트워크 배치 출력 잡 {} ({}장) 완료", jobId, serialCount);
+                    } else {
+                        labelService.print(base);
+                        log.info("[cloud-sync] 네트워크 출력 잡 {} 인쇄 완료", jobId);
+                    }
+                    PrintedJob pj = new PrintedJob(); pj.setJobId(jobId); printedJobs.save(pj); // 인쇄 확정 기록
                 }
             } catch (Exception e) {
                 ok = false; msg = e.getMessage();
@@ -127,7 +151,7 @@ public class CloudSyncClient {
     /** 하트비트 + 재고 업싱크. */
     @Scheduled(fixedDelayString = "${printscan.cloud.heartbeat-ms:15000}")
     public void heartbeat() {
-        if (!props.isEnabled() || token == null) return;
+        if (!props.isEnabled() || !ensureRegistered()) return;
         try {
             List<Map<String, Object>> inv = inventory.findAll().stream().map(this::snap).collect(Collectors.toList());
             http.post().uri("/api/device/heartbeat")
@@ -139,8 +163,8 @@ public class CloudSyncClient {
         }
     }
 
-    /** 소비(인쇄 자동출고 등 OUT) 발생 시 허브로 업싱크 → 라인/작업자별 집계. */
-    @EventListener
+    /** 소비(OUT) 업싱크 → 라인/작업자별 집계. 트랜잭션 커밋 후 실행(인쇄/DB 경로를 블록하지 않음). */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onMoved(InventoryService.InventoryMovedEvent ev) {
         if (!props.isEnabled() || token == null) return;
         InventoryMovement m = ev.movement();

@@ -100,7 +100,7 @@ public class LabelRasterizer {
         if (data == null || data.isEmpty() || sizePx <= 0) return;
         try {
             Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
-            hints.put(EncodeHintType.MARGIN, 0);
+            hints.put(EncodeHintType.MARGIN, 2); // 콰이엇존(모듈) — 스캐너 신뢰성
             hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
             hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
             BitMatrix m = new QRCodeWriter().encode(data, BarcodeFormat.QR_CODE, sizePx, sizePx, hints);
@@ -114,7 +114,7 @@ public class LabelRasterizer {
         if (data == null || data.isEmpty() || widthPx <= 0 || heightPx <= 0) return;
         try {
             Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
-            hints.put(EncodeHintType.MARGIN, 0);
+            hints.put(EncodeHintType.MARGIN, 10); // 좌우 콰이엇존(px)
             BitMatrix m = new Code128Writer().encode(data, BarcodeFormat.CODE_128, widthPx, heightPx, hints);
             g.drawImage(MatrixToImageWriter.toBufferedImage(m), x, y, null);
         } catch (Exception e) {

@@ -44,8 +44,15 @@ public final class ZplGraphicEncoder {
 
     /** 전체 라벨 ZPL 로 감싼다: ^XA ^PW ^LL ^FO0,0 ^GFA ^FS [^PQ] ^XZ. */
     public static String wrapLabel(BufferedImage img, int copies) {
+        return wrapLabel(img, copies, -1, -1);
+    }
+
+    /** darkness(~SD 0~30)·speed(^PR) 를 함께 지정. 음수면 미설정. */
+    public static String wrapLabel(BufferedImage img, int copies, int darkness, int speed) {
         StringBuilder z = new StringBuilder();
         z.append("^XA\n");
+        if (darkness >= 0) z.append("~SD").append(Math.min(30, darkness)).append('\n');
+        if (speed > 0) z.append("^PR").append(speed).append('\n');
         z.append("^PW").append(img.getWidth()).append('\n');
         z.append("^LL").append(img.getHeight()).append('\n');
         z.append("^FO0,0").append(toGraphicField(img)).append("^FS\n");

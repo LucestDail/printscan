@@ -18,4 +18,8 @@ public class PrinterProperties {
     private String name = "zebra,zd421";
     private String device = "/dev/usb/lp0";
     private int timeoutMs = 5000;
+    /** 인쇄 농도 0~30(~SD). -1=설정 안 함(프린터 기본). 열전사 스캔품질에 직결. */
+    private int darkness = -1;
+    /** 인쇄 속도 in/s(^PR). -1=설정 안 함. */
+    private int speed = -1;
 }

@@ -1,5 +1,6 @@
 package com.printscan.cloud.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,7 @@ public class Device {
     private String name;
     private String line;   // 담당 생산 라인
 
+    @JsonIgnore                 // 자격증명 — API/대시보드 응답에 노출 금지(register 응답에서만 직접 반환)
     @Column(unique = true)
     private String deviceToken;
 

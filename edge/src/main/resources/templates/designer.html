@@ -37,11 +37,15 @@
 
 <nav class="global-nav">
   <strong style="font-size:14px;">▪ printscan</strong>
-  <a th:href="@{/}">홈</a>
-  <a th:href="@{/designer}">라벨 디자이너</a>
-  <a th:href="@{/scan}">스캔·재고</a>
+  <a th:href="@{/}" th:text="#{nav.home}">홈</a>
+  <a th:href="@{/designer}" th:text="#{nav.designer}">라벨 디자이너</a>
+  <a th:href="@{/scan}" th:text="#{nav.scan}">스캔·재고</a>
   <span class="spacer"></span>
-  <span class="t-fine-print" style="opacity:.7;">mode: <span th:text="${printerMode}">cups</span></span>
+  <span class="lang" style="font-size:var(--t-nav-link-size);">
+    <a th:href="@{/designer(lang='ko')}" style="color:var(--color-primary);text-decoration:none;" th:style="${#locale.language=='ko'}?'text-decoration:underline;font-weight:600;color:var(--color-primary);'">KO</a>
+    <span style="opacity:.4">·</span>
+    <a th:href="@{/designer(lang='en')}" style="color:var(--color-primary);text-decoration:none;" th:style="${#locale.language=='en'}?'text-decoration:underline;font-weight:600;color:var(--color-primary);'">EN</a>
+  </span>
 </nav>
 
 <div class="sub-nav">

@@ -1,6 +1,7 @@
 package com.printscan.edge.label;
 
 import com.printscan.edge.config.LineProperties;
+import com.printscan.edge.config.PrinterProperties;
 import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.label.raster.LabelRasterizer;
 import com.printscan.edge.label.raster.ZplGraphicEncoder;
@@ -31,6 +32,7 @@ public class LabelService {
     private final PrintService printService;
     private final InventoryService inventory;
     private final LineProperties lineProps;
+    private final PrinterProperties printerProps;
 
     // ── CRUD ──────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -108,23 +110,30 @@ public class LabelService {
 
     private void renderAndSend(RenderRequest req, int copies) throws Exception {
         BufferedImage img = render(req);
-        String zpl = ZplGraphicEncoder.wrapLabel(img, copies);
+        String zpl = ZplGraphicEncoder.wrapLabel(img, copies, printerProps.getDarkness(), printerProps.getSpeed());
         printService.print(zpl);
         log.info("[label] 인쇄: {}x{}px copies={}", img.getWidth(), img.getHeight(), copies);
     }
 
-    /** 인쇄=자동 출고: 변수값 중 등록 제품코드를 qty 만큼 OUT(라인/작업자 귀속). */
+    /**
+     * 인쇄=자동 출고: 제품코드 변수(관례상 "code")가 등록 제품이면 qty 만큼 OUT(라인/작업자 귀속).
+     * 모든 변수값을 브루트포스하지 않음(오출고 방지) — code 변수만 대상.
+     */
     private void consume(Map<String, String> variables, int qty, String operator) {
         if (variables == null) return;
-        Set<String> codes = new LinkedHashSet<>(variables.values());
-        for (String code : codes) {
-            if (code == null || code.isBlank()) continue;
-            try {
-                inventory.consumeForPrint(code, qty, operator, lineProps.getName());
-            } catch (Exception e) {
-                log.warn("[label] 자동출고 스킵({}): {}", code, e.getMessage());
-            }
+        String code = variables.get("code");
+        if (code == null || code.isBlank()) return;
+        try {
+            inventory.consumeForPrint(code, qty, operator, lineProps.getName());
+        } catch (Exception e) {
+            log.warn("[label] 자동출고 스킵({}): {}", code, e.getMessage());
         }
+    }
+
+    /** 미디어 자동 캘리브레이션(~JC) — 라벨 길이/갭 재측정. 잘림/치우침 교정. */
+    public void calibrate() throws Exception {
+        printService.print("^XA~JC^XZ");
+        log.info("[printer] 미디어 캘리브레이션(~JC) 전송");
     }
 
     private LabelTemplate inline(RenderRequest req) {

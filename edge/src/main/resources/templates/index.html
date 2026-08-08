@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>printscan · 온디바이스</title>
+  <title th:text="#{index.title}">printscan</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link th:href="@{/design/tokens.css}" rel="stylesheet">
@@ -24,55 +24,62 @@
     .feature h3 { margin: var(--space-sm) 0 4px; font-size: var(--t-tagline-size); font-weight:600; }
     .feature p { margin:0; color: var(--color-ink-muted-48); font-size: var(--t-caption-size); }
     .dot { width:8px; height:8px; border-radius:50%; background:#2ecc71; display:inline-block; margin-right:6px; }
+    .lang a { color: var(--color-primary); text-decoration:none; font-size: var(--t-nav-link-size); }
+    .lang a.on { font-weight:600; text-decoration:underline; }
   </style>
 </head>
 <body>
 
 <nav class="global-nav">
   <strong style="font-size:14px;">▪ printscan</strong>
-  <a th:href="@{/}">홈</a>
-  <a th:href="@{/designer}">라벨 디자이너</a>
-  <a th:href="@{/scan}">스캔·재고</a>
+  <a th:href="@{/}" th:text="#{nav.home}">홈</a>
+  <a th:href="@{/designer}" th:text="#{nav.designer}">라벨 디자이너</a>
+  <a th:href="@{/scan}" th:text="#{nav.scan}">스캔·재고</a>
   <span class="spacer"></span>
-  <span class="t-fine-print" style="opacity:.7;"><span class="dot"></span>라인 <span th:text="${printerMode}">cups</span></span>
+  <span class="lang">
+    <a th:href="@{/(lang='ko')}" th:classappend="${#locale.language=='ko'}?'on'">KO</a>
+    <span style="opacity:.4">·</span>
+    <a th:href="@{/(lang='en')}" th:classappend="${#locale.language=='en'}?'on'">EN</a>
+  </span>
 </nav>
 
 <section class="tile tile-light" style="padding: var(--space-xl) var(--space-lg);">
-  <h1 class="t-display-lg headline" style="margin:0;">온디바이스 라벨 관리</h1>
-  <p class="t-lead tagline" style="margin:6px 0 0;">이 라인에서 디자인하고, 인쇄하고, 재고를 관리하세요.</p>
+  <h1 class="t-display-lg headline" style="margin:0;" th:text="#{index.h1}">이 기기에서 라벨 관리</h1>
+  <p class="t-lead tagline" style="margin:6px 0 0;" th:text="#{index.sub}">…</p>
 </section>
 
 <div class="wrap">
   <div class="status">
-    <div class="stat"><div class="n" id="sLine">–</div><div class="l">라인</div></div>
-    <div class="stat"><div class="n" id="sMode">–</div><div class="l">프린터 모드</div></div>
-    <div class="stat"><div class="n" id="sProducts">–</div><div class="l">등록 제품</div></div>
-    <div class="stat"><div class="n" id="sLow">–</div><div class="l">재고 부족</div></div>
+    <div class="stat"><div class="n" id="sLine">–</div><div class="l" th:text="#{index.stat.line}">라인</div></div>
+    <div class="stat"><div class="n"><span class="dot"></span><span id="sPrinter">–</span></div><div class="l" th:text="#{index.stat.printer}">프린터</div></div>
+    <div class="stat"><div class="n" id="sProducts">–</div><div class="l" th:text="#{index.stat.products}">등록 제품</div></div>
+    <div class="stat"><div class="n" id="sLow">–</div><div class="l" th:text="#{index.stat.low}">재고 부족</div></div>
   </div>
 
   <div class="cards">
     <a class="feature" th:href="@{/designer}">
-      <div class="ic">🏷️</div><h3>라벨 디자이너</h3>
-      <p>드래그로 라벨을 만들고 실시간 미리보기·인쇄. 한글·QR·바코드·일련번호 배치.</p>
+      <div class="ic">🏷️</div><h3 th:text="#{index.card.designer.title}">라벨 디자이너</h3>
+      <p th:text="#{index.card.designer.desc}">…</p>
     </a>
     <a class="feature" th:href="@{/scan}">
-      <div class="ic">📦</div><h3>스캔 · 재고</h3>
-      <p>바코드 스캔으로 제품 조회·입출고. 인쇄 시 자동 출고로 소비 추적.</p>
+      <div class="ic">📦</div><h3 th:text="#{index.card.scan.title}">스캔 · 재고</h3>
+      <p th:text="#{index.card.scan.desc}">…</p>
     </a>
     <a class="feature" href="/h2-console" target="_blank">
-      <div class="ic">🗄️</div><h3>로컬 DB</h3>
-      <p>온디바이스 데이터(오프라인 동작). 점검용 H2 콘솔.</p>
+      <div class="ic">🗄️</div><h3 th:text="#{index.card.admin.title}">점검</h3>
+      <p th:text="#{index.card.admin.desc}">…</p>
     </a>
   </div>
 </div>
 
-<script>
-  fetch('/api/health').then(r=>r.json()).then(h=>{
+<script th:inline="javascript">
+  var READY = /*[[#{index.stat.line}]]*/ 'Line';
+  fetch('/api/health').then(function(r){return r.json();}).then(function(h){
     document.getElementById('sLine').textContent = h.line || '-';
-    document.getElementById('sMode').textContent = h.printerMode || '-';
-    document.getElementById('sProducts').textContent = h.products ?? 0;
-    document.getElementById('sLow').textContent = h.lowStock ?? 0;
-  }).catch(()=>{});
+    document.getElementById('sPrinter').textContent = h.status === 'UP' ? '●' : '×';
+    document.getElementById('sProducts').textContent = h.products != null ? h.products : 0;
+    document.getElementById('sLow').textContent = h.lowStock != null ? h.lowStock : 0;
+  }).catch(function(){});
 </script>
 </body>
 </html>

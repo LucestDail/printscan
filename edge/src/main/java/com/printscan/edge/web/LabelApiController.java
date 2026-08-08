@@ -50,9 +50,13 @@ public class LabelApiController {
         }
     }
 
+    private static final int MAX_COPIES = 1000;
+
     /** 실제 인쇄. */
     @PostMapping("/print")
     public ResponseEntity<String> print(@RequestBody RenderRequest req) {
+        if (req.copies() != null && (req.copies() < 1 || req.copies() > MAX_COPIES))
+            return ResponseEntity.badRequest().body("매수는 1~" + MAX_COPIES + " 범위여야 합니다.");
         try {
             service.print(req);
             return ResponseEntity.ok("출력이 완료되었습니다.");
@@ -64,12 +68,27 @@ public class LabelApiController {
     /** 일련번호 자동증가 배치 인쇄. */
     @PostMapping("/print-batch")
     public ResponseEntity<String> printBatch(@RequestBody BatchRequest b) {
+        if (b.count() < 1 || b.count() > MAX_COPIES)
+            return ResponseEntity.badRequest().body("개수는 1~" + MAX_COPIES + " 범위여야 합니다.");
+        if (b.pad() < 0 || b.pad() > 12)
+            return ResponseEntity.badRequest().body("자리수는 0~12 범위여야 합니다.");
         try {
             RenderRequest base = new RenderRequest(b.id(), b.name(), b.widthMm(), b.heightMm(), b.dpi(),
                     b.elementsJson(), b.variables(), 1, b.operator());
             SerialSpec spec = new SerialSpec(b.seqVar(), b.prefix(), b.start(), b.count(), b.pad());
             service.printBatch(base, spec);
             return ResponseEntity.ok(b.count() + "장 배치 출력 완료 (" + spec.format(0) + "~" + spec.format(b.count() - 1) + ")");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
+        }
+    }
+
+    /** 미디어 자동 캘리브레이션(~JC) — 라벨 크기/갭 재측정으로 잘림/치우침 교정. */
+    @PostMapping("/calibrate")
+    public ResponseEntity<String> calibrate() {
+        try {
+            service.calibrate();
+            return ResponseEntity.ok("캘리브레이션을 시작했습니다. 프린터가 라벨을 몇 장 피드합니다.");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
         }
