@@ -12,6 +12,7 @@ let previewTimer = null;
 const DEFAULTS = {
   TEXT:    () => ({ type:'TEXT',    xMm:1.5, yMm:2,   value:'텍스트 {{name}}', sizeMm:2.2, bold:true }),
   QR:      () => ({ type:'QR',      xMm:21.5,yMm:2,   value:'{{code}}', sizeMm:17 }),
+  DATAMATRIX: () => ({ type:'DATAMATRIX', xMm:24, yMm:3, value:'{{code}}', sizeMm:12 }),
   BARCODE: () => ({ type:'BARCODE', xMm:1.5, yMm:9.5, value:'{{code}}', sizeMm:6.5, widthMm:18 }),
   BOX:     () => ({ type:'BOX',     xMm:1.5, yMm:2,   widthMm:14, heightMm:1, value:'' })
 };
@@ -33,6 +34,7 @@ function bbox(e) {
   switch (e.type) {
     case 'TEXT':    return { w: Math.max(4, (e.value || '').length * (e.sizeMm || 4) * 0.62), h: e.sizeMm || 4 };
     case 'QR':      return { w: e.sizeMm || 14, h: e.sizeMm || 14 };
+    case 'DATAMATRIX': return { w: e.sizeMm || 12, h: e.sizeMm || 12 };
     case 'BARCODE': return { w: e.widthMm || 26, h: e.sizeMm || 8 };
     case 'BOX':     return { w: e.widthMm || 10, h: e.heightMm || 2 };
   }
@@ -40,7 +42,7 @@ function bbox(e) {
 }
 
 // ── 그리기 ──────────────────────────────
-const TYPE_COLOR = { TEXT:'#0066cc', QR:'#1d1d1f', BARCODE:'#7a3fcc', BOX:'#c0392b' };
+const TYPE_COLOR = { TEXT:'#0066cc', QR:'#1d1d1f', DATAMATRIX:'#0a7d5a', BARCODE:'#7a3fcc', BOX:'#c0392b' };
 function draw() {
   const c = $('canvas'), g = c.getContext('2d');
   g.clearRect(0, 0, c.width, c.height);
@@ -117,7 +119,7 @@ function onMove(ev) {
   } else {
     const wMm = Math.max(2, mm(p.x - px(e.xMm)));
     const hMm = Math.max(1, mm(p.y - px(e.yMm)));
-    if (e.type === 'QR') { e.sizeMm = Math.max(wMm, hMm); }
+    if (e.type === 'QR' || e.type === 'DATAMATRIX') { e.sizeMm = Math.max(wMm, hMm); }
     else if (e.type === 'TEXT') { e.sizeMm = hMm; }
     else if (e.type === 'BARCODE') { e.widthMm = wMm; e.sizeMm = hMm; }
     else if (e.type === 'BOX') { e.widthMm = wMm; e.heightMm = hMm; }
@@ -146,7 +148,7 @@ function renderProps(valuesOnly) {
   if (e.type === 'TEXT') {
     html += `<label>${t('designer.p.textH')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}">
              <label><input data-k="bold" type="checkbox" ${e.bold ? 'checked' : ''} style="width:auto;margin-right:6px;">${t('designer.p.bold')}</label>`;
-  } else if (e.type === 'QR') {
+  } else if (e.type === 'QR' || e.type === 'DATAMATRIX') {
     html += `<label>${t('designer.p.qrSize')}</label><input data-k="sizeMm" type="number" step="0.5" value="${e.sizeMm}">`;
   } else if (e.type === 'BARCODE') {
     html += `<div class="size-row"><div><label>${t('designer.w')}</label><input data-k="widthMm" type="number" step="0.5" value="${e.widthMm}"></div>

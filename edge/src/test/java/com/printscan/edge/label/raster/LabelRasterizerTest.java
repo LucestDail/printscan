@@ -62,6 +62,19 @@ class LabelRasterizerTest {
     }
 
     @Test
+    void DataMatrix_렌더() {
+        LabelTemplate t = new LabelTemplate();
+        t.setWidthMm(30); t.setHeightMm(30); t.setDpi(203);
+        t.setElementsJson("[{\"type\":\"DATAMATRIX\",\"xMm\":2,\"yMm\":2,\"value\":\"{{code}}\",\"sizeMm\":15}]");
+        BufferedImage img = new LabelRasterizer(new LabelProperties()).render(t, Map.of("code", "DM-0001"));
+        int black = 0;
+        for (int y = 0; y < img.getHeight(); y++)
+            for (int x = 0; x < img.getWidth(); x++)
+                if ((img.getRGB(x, y) & 0xffffff) == 0) black++;
+        assertTrue(black > 50, "DataMatrix 모듈이 그려져야 함(실제=" + black + ")");
+    }
+
+    @Test
     void 변수치환() {
         assertEquals("제품 PROD-1", LabelRasterizer.bind("제품 {{code}}", Map.of("code", "PROD-1")));
         assertEquals("빈값 ", LabelRasterizer.bind("빈값 {{x}}", Map.of("x", "")));

@@ -4,6 +4,7 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.datamatrix.DataMatrixWriter;
 import com.google.zxing.oned.Code128Writer;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
@@ -76,6 +77,7 @@ public class LabelRasterizer {
                 switch (e.getType()) {
                     case TEXT -> drawText(g, val, x, y, mm2dot(e.getSizeMm(), dpi), e.isBold());
                     case QR -> drawQr(g, val, x, y, mm2dot(e.getSizeMm(), dpi));
+                    case DATAMATRIX -> drawDatamatrix(g, val, x, y, mm2dot(e.getSizeMm(), dpi));
                     case BARCODE -> drawBarcode(g, val, x, y,
                             mm2dot(e.getWidthMm() > 0 ? e.getWidthMm() : 30, dpi),
                             mm2dot(e.getSizeMm(), dpi));
@@ -107,6 +109,19 @@ public class LabelRasterizer {
             g.drawImage(MatrixToImageWriter.toBufferedImage(m), x, y, null);
         } catch (Exception e) {
             log.warn("[raster] QR 실패: {}", e.getMessage());
+        }
+    }
+
+    private void drawDatamatrix(Graphics2D g, String data, int x, int y, int sizePx) {
+        if (data == null || data.isEmpty() || sizePx <= 0) return;
+        try {
+            Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
+            hints.put(EncodeHintType.MARGIN, 1);
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+            BitMatrix m = new DataMatrixWriter().encode(data, BarcodeFormat.DATA_MATRIX, sizePx, sizePx, hints);
+            g.drawImage(MatrixToImageWriter.toBufferedImage(m), x, y, null);
+        } catch (Exception e) {
+            log.warn("[raster] DataMatrix 실패: {}", e.getMessage());
         }
     }
 
