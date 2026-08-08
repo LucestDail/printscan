@@ -41,6 +41,8 @@
   <strong style="font-size:14px;">▪ printscan <span style="opacity:.6;">hub</span></strong>
   <span class="spacer"></span>
   <span class="t-fine-print" style="opacity:.7;margin-right:14px;" th:text="#{brand.sub}">통합 관리</span>
+  <a th:href="@{/login}" style="color:var(--color-body-on-dark);text-decoration:none;font-size:var(--t-nav-link-size);margin-right:10px;opacity:.85;" th:text="#{login.h1}">조직</a>
+  <a href="#" id="navLogout" style="color:var(--color-body-on-dark);text-decoration:none;font-size:var(--t-nav-link-size);margin-right:14px;opacity:.85;" th:text="#{nav.logout}">로그아웃</a>
   <span class="lang">
     <a th:href="@{/(lang='ko')}" th:classappend="${#locale.language=='ko'}?'on'">KO</a>
     <span style="opacity:.4">·</span>

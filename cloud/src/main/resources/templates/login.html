@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="#{login.title}">printscan hub · Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link th:href="@{/design/tokens.css}" rel="stylesheet">
+  <link th:href="@{/design/components.css}" rel="stylesheet">
+  <style>
+    .box { max-width: 420px; margin: 8vh auto; background: var(--color-canvas); border: var(--border-hairline);
+           border-radius: var(--radius-lg); padding: var(--space-xl); }
+    label { display:block; font-size: var(--t-caption-size); color: var(--color-ink-muted-80); margin: var(--space-md) 0 4px; }
+    input { font-family: var(--font-text); font-size: var(--t-body-size); border: var(--border-hairline); border-radius: var(--radius-sm); padding: 11px 12px; width: 100%; box-sizing: border-box; }
+    .muted { color: var(--color-ink-muted-48); font-size: var(--t-fine-print-size); margin-top: var(--space-sm); }
+    .lang { text-align:right; }
+    .lang a { color: var(--color-primary); text-decoration:none; font-size: var(--t-nav-link-size); }
+    .lang a.on { font-weight:600; text-decoration:underline; }
+  </style>
+</head>
+<body>
+<nav class="global-nav">
+  <strong style="font-size:14px;">▪ printscan <span style="opacity:.6;">hub</span></strong>
+  <span class="spacer"></span>
+  <span class="lang">
+    <a th:href="@{/login(lang='ko')}" th:classappend="${#locale.language=='ko'}?'on'">KO</a>
+    <span style="opacity:.4">·</span>
+    <a th:href="@{/login(lang='en')}" th:classappend="${#locale.language=='en'}?'on'">EN</a>
+  </span>
+</nav>
+
+<div class="box">
+  <h2 class="t-display-md" th:text="#{login.h1}">조직 접속</h2>
+  <p class="muted" th:text="#{login.prompt}">조직 키를 입력하세요</p>
+  <label th:text="#{login.orgKey}">조직 키</label>
+  <input id="orgKey" autocomplete="off" placeholder="ORG-...">
+  <button class="btn btn-primary" id="btnEnter" style="margin-top:var(--space-lg);width:100%;" th:text="#{login.enter}">접속</button>
+  <div class="muted" th:text="#{login.note}">온프렘(단일 조직)은 비워두고 접속.</div>
+</div>
+
+<script>
+  function enter() {
+    var k = document.getElementById('orgKey').value.trim();
+    if (k) localStorage.setItem('PS_ORG_KEY', k); else localStorage.removeItem('PS_ORG_KEY');
+    location.href = '/';
+  }
+  document.getElementById('btnEnter').addEventListener('click', enter);
+  document.getElementById('orgKey').addEventListener('keydown', function(e){ if (e.key==='Enter') enter(); });
+  document.getElementById('orgKey').value = localStorage.getItem('PS_ORG_KEY') || '';
+</script>
+</body>
+</html>

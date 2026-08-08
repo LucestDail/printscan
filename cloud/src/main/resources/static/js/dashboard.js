@@ -3,6 +3,15 @@
 const $ = (id) => document.getElementById(id);
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2600);}
 
+// 관리자 요청 — 로그인한 org-key(localStorage)를 X-Org-Key 로 주입(온프렘 단일org면 없어도 폴백).
+function adminFetch(url, opts) {
+  opts = opts || {};
+  const h = Object.assign({}, opts.headers || {});
+  const k = localStorage.getItem('PS_ORG_KEY');
+  if (k) h['X-Org-Key'] = k;
+  return fetch(url, Object.assign({}, opts, { headers: h }));
+}
+
 const DEFAULT_ELEMENTS = JSON.stringify([
   {type:'TEXT',xMm:1.5,yMm:2,value:'한글 {{name}}',sizeMm:2.2,bold:true},
   {type:'TEXT',xMm:1.5,yMm:5.5,value:'{{code}}',sizeMm:2.2},
@@ -12,12 +21,14 @@ const DEFAULT_ELEMENTS = JSON.stringify([
 
 async function refresh() {
   try {
-    const [stats, devs, snaps, jobs, consume] = await Promise.all([
-      fetch('/api/admin/stats').then(r=>r.json()),
-      fetch('/api/admin/devices').then(r=>r.json()),
-      fetch('/api/admin/snapshots').then(r=>r.json()),
-      fetch('/api/admin/jobs').then(r=>r.json()),
-      fetch('/api/admin/consumption').then(r=>r.json())
+    const statsRes = await adminFetch('/api/admin/stats');
+    if (statsRes.status === 400) { location.href = '/login'; return; } // 멀티테넌트: org-key 필요/오류
+    const stats = await statsRes.json();
+    const [devs, snaps, jobs, consume] = await Promise.all([
+      adminFetch('/api/admin/devices').then(r=>r.json()),
+      adminFetch('/api/admin/snapshots').then(r=>r.json()),
+      adminFetch('/api/admin/jobs').then(r=>r.json()),
+      adminFetch('/api/admin/consumption').then(r=>r.json())
     ]);
     $('sDevices').textContent = stats.devices;
     $('sOnline').textContent = stats.online;
@@ -63,7 +74,7 @@ async function netPrint() {
     seqVar: $('npSeqVar').value||'code', serialPrefix: $('npPrefix').value||'',
     serialStart: parseInt($('npStart').value)||1, serialCount: count, serialPad: parseInt($('npPad').value)||0
   };
-  const res = await fetch(`/api/admin/devices/${id}/print`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const res = await adminFetch(`/api/admin/devices/${id}/print`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if (!res.ok) { toast(t('toast.enqueueFail')); return; }
   const j = await res.json();
   toast(t('toast.enqueued', [j.id]));
@@ -72,6 +83,8 @@ async function netPrint() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadI18n(document.documentElement.lang || 'ko');
+  const lo = $('navLogout');
+  if (lo) lo.addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('PS_ORG_KEY'); location.href = '/login'; });
   $('npElements').value = DEFAULT_ELEMENTS;
   $('btnNetPrint').addEventListener('click', netPrint);
   refresh();
