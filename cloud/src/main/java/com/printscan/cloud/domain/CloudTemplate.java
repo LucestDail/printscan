@@ -3,6 +3,8 @@ package com.printscan.cloud.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -25,7 +27,8 @@ public class CloudTemplate {
     private double heightMm = 25;
     private Integer dpi;
 
-    @Lob @Column(columnDefinition = "CLOB")
+    // 방언이 타입 결정(PG=text, H2=clob) — columnDefinition="CLOB" 하드코딩은 Postgres 에 없어 금지.
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     private String elementsJson = "[]";
 
     private LocalDateTime updatedAt;
