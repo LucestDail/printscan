@@ -13,7 +13,7 @@ import com.printscan.edge.label.RenderRequest;
 import com.printscan.edge.label.SerialSpec;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -21,7 +21,6 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.client.RestClient;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,7 +54,8 @@ public class CloudSyncClient {
     public CloudSyncClient(CloudSyncProperties props, DeviceIdentityRepository identityRepo,
                            LabelService labelService, InventoryService inventory,
                            PrinterProperties printer, LineProperties line,
-                           PrintedJobRepository printedJobs, LabelTemplateRepository templates) {
+                           PrintedJobRepository printedJobs, LabelTemplateRepository templates,
+                           @Qualifier("cloudRestClientBuilder") RestClient.Builder cloudRestClientBuilder) {
         this.props = props;
         this.identityRepo = identityRepo;
         this.labelService = labelService;
@@ -64,11 +64,9 @@ public class CloudSyncClient {
         this.line = line;
         this.printedJobs = printedJobs;
         this.templates = templates;
-        // 타임아웃 필수: 허브 반쯤열린 TCP 가 스케줄러 스레드를 무한 블록하지 않도록
-        SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
-        rf.setConnectTimeout((int) Duration.ofSeconds(2).toMillis());
-        rf.setReadTimeout((int) Duration.ofSeconds(5).toMillis());
-        this.http = RestClient.builder().baseUrl(props.getBaseUrl()).requestFactory(rf).build();
+        // baseUrl 만 부착해 build — 타임아웃/requestFactory 는 주입된 빌더(CloudSyncConfig)에 설정됨.
+        // 빌더 주입 덕에 테스트에서 MockRestServiceServer.bindTo(builder) 로 HTTP 계약 검증 가능.
+        this.http = cloudRestClientBuilder.baseUrl(props.getBaseUrl()).build();
     }
 
     /** token 이 없으면(부팅 시 허브 불가 등) 재등록 시도. */
