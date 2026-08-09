@@ -2,6 +2,8 @@ package com.printscan.cloud.web;
 
 import com.printscan.cloud.domain.Organization;
 import com.printscan.cloud.domain.OrganizationRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,22 @@ import java.util.List;
 public class OrgContext {
 
     private final OrganizationRepository orgs;
+
+    public static final String SESSION_ORG = "orgId";
+
+    /**
+     * 요청의 테넌트 확정: ①서버 세션(로그인) ②X-Org-Key 헤더(프로그램 접근) ③단일 org 폴백(온프렘).
+     * 세션 우선 → localStorage/헤더 노출 없이 쿠키 기반.
+     */
+    @Transactional(readOnly = true)
+    public Organization resolve(HttpServletRequest req) {
+        HttpSession s = req.getSession(false);
+        if (s != null && s.getAttribute(SESSION_ORG) != null) {
+            Long id = (Long) s.getAttribute(SESSION_ORG);
+            return orgs.findById(id).orElseThrow(() -> new IllegalArgumentException("세션 조직 없음"));
+        }
+        return resolve(req.getHeader("X-Org-Key"));
+    }
 
     @Transactional(readOnly = true)
     public Organization resolve(String orgKey) {

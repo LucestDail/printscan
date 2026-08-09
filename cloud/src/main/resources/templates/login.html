@@ -44,14 +44,16 @@
 </div>
 
 <script>
-  function enter() {
+  async function enter() {
     var k = document.getElementById('orgKey').value.trim();
-    if (k) localStorage.setItem('PS_ORG_KEY', k); else localStorage.removeItem('PS_ORG_KEY');
-    location.href = '/';
+    try {
+      var res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ orgKey: k }) });
+      if (res.ok) { location.href = '/'; }
+      else { alert('로그인 실패 — 조직 키를 확인하세요.'); }
+    } catch (e) { alert('로그인 오류: ' + e.message); }
   }
   document.getElementById('btnEnter').addEventListener('click', enter);
   document.getElementById('orgKey').addEventListener('keydown', function(e){ if (e.key==='Enter') enter(); });
-  document.getElementById('orgKey').value = localStorage.getItem('PS_ORG_KEY') || '';
 </script>
 </body>
 </html>

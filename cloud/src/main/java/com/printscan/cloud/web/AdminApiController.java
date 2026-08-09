@@ -3,6 +3,7 @@ package com.printscan.cloud.web;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.printscan.cloud.domain.*;
 import com.printscan.cloud.service.FleetService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 관리자 UI — 전부 X-Org-Key 로 테넌트 스코프(온프렘 단일org면 헤더 생략 가능).
- * 조회/집계/네트워크출력 모두 호출자 org 로 한정 → 테넌트 격리.
+ * 관리자 UI — 테넌트는 서버 세션(로그인)으로 확정(OrgContext), 없으면 X-Org-Key 헤더/단일org 폴백.
+ * 조회/집계/네트워크출력/템플릿 모두 호출자 org 로 한정 → 테넌트 격리.
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -23,67 +24,50 @@ public class AdminApiController {
     private final OrgContext orgContext;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static final String ORG = "X-Org-Key";
+    private Long org(HttpServletRequest req) { return orgContext.resolve(req).getId(); }
 
     @GetMapping("/devices")
-    public List<Device> devices(@RequestHeader(value = ORG, required = false) String k) {
-        return fleet.allDevices(orgContext.resolve(k).getId());
-    }
+    public List<Device> devices(HttpServletRequest req) { return fleet.allDevices(org(req)); }
 
     @GetMapping("/jobs")
-    public List<PrintJobCloud> jobs(@RequestHeader(value = ORG, required = false) String k) {
-        return fleet.recentJobs(orgContext.resolve(k).getId());
-    }
+    public List<PrintJobCloud> jobs(HttpServletRequest req) { return fleet.recentJobs(org(req)); }
 
     @GetMapping("/snapshots")
-    public List<InventorySnapshot> snapshots(@RequestHeader(value = ORG, required = false) String k) {
-        return fleet.allSnapshots(orgContext.resolve(k).getId());
-    }
+    public List<InventorySnapshot> snapshots(HttpServletRequest req) { return fleet.allSnapshots(org(req)); }
 
     @GetMapping("/stats")
-    public Map<String, Object> stats(@RequestHeader(value = ORG, required = false) String k) {
-        return fleet.stats(orgContext.resolve(k).getId());
-    }
+    public Map<String, Object> stats(HttpServletRequest req) { return fleet.stats(org(req)); }
 
     @GetMapping("/consumption")
-    public Map<String, Object> consumption(@RequestHeader(value = ORG, required = false) String k) {
-        return fleet.consumption(orgContext.resolve(k).getId());
-    }
+    public Map<String, Object> consumption(HttpServletRequest req) { return fleet.consumption(org(req)); }
 
-    // ── 중앙 템플릿(테넌트 스코프) ──
     @GetMapping("/templates")
-    public List<CloudTemplate> templates(@RequestHeader(value = ORG, required = false) String k) {
-        return fleet.listTemplates(orgContext.resolve(k).getId());
-    }
+    public List<CloudTemplate> templates(HttpServletRequest req) { return fleet.listTemplates(org(req)); }
 
     @PostMapping("/templates")
-    public CloudTemplate saveTemplate(@RequestHeader(value = ORG, required = false) String k,
-                                      @RequestBody CloudTemplate t) {
-        return fleet.saveTemplate(orgContext.resolve(k).getId(), t);
+    public CloudTemplate saveTemplate(HttpServletRequest req, @RequestBody CloudTemplate t) {
+        return fleet.saveTemplate(org(req), t);
     }
 
     @DeleteMapping("/templates/{id}")
-    public ResponseEntity<Void> deleteTemplate(@RequestHeader(value = ORG, required = false) String k,
-                                               @PathVariable Long id) {
-        fleet.deleteTemplate(orgContext.resolve(k).getId(), id);
+    public ResponseEntity<Void> deleteTemplate(HttpServletRequest req, @PathVariable Long id) {
+        fleet.deleteTemplate(org(req), id);
         return ResponseEntity.noContent().build();
     }
 
     /** 네트워크 출력 지시 — 대상 장비가 호출자 org 소속이어야 함(격리). */
     @PostMapping("/devices/{id}/print")
-    public PrintJobCloud print(@RequestHeader(value = ORG, required = false) String k,
-                               @PathVariable Long id, @RequestBody NetworkPrintRequest req) throws Exception {
-        Long orgId = orgContext.resolve(k).getId();
-        // 입력 상한: 네트워크 출력 증폭(물리 DoS) 방지
-        if (req.copies() != null && req.copies() > 1000) throw new IllegalArgumentException("매수 상한 초과(≤1000)");
-        if (req.serialCount() != null && (req.serialCount() < 0 || req.serialCount() > 5000))
+    public PrintJobCloud print(HttpServletRequest req, @PathVariable Long id, @RequestBody NetworkPrintRequest r) throws Exception {
+        Long orgId = org(req);
+        if (r.copies() != null && r.copies() > 1000) throw new IllegalArgumentException("매수 상한 초과(≤1000)");
+        if (r.serialCount() != null && (r.serialCount() < 0 || r.serialCount() > 5000))
             throw new IllegalArgumentException("일련번호 개수 상한 초과(≤5000)");
-        if (req.elementsJson() != null && req.elementsJson().length() > 100_000)
+        if (r.elementsJson() != null && r.elementsJson().length() > 100_000)
             throw new IllegalArgumentException("라벨 정의가 너무 큽니다");
-        String varsJson = req.variables() != null ? mapper.writeValueAsString(req.variables()) : "{}";
-        return fleet.enqueuePrint(orgId, id, req.widthMm(), req.heightMm(), req.dpi(),
-                req.elementsJson(), varsJson, req.copies() != null ? req.copies() : 1,
-                req.seqVar(), req.serialPrefix(), req.serialStart(), req.serialCount(), req.serialPad());
+        String varsJson = r.variables() != null ? mapper.writeValueAsString(r.variables()) : "{}";
+        return fleet.enqueuePrint(orgId, id, r.widthMm(), r.heightMm(), r.dpi(),
+                r.elementsJson(), varsJson, r.copies() != null ? r.copies() : 1,
+                r.seqVar(), r.serialPrefix(), r.serialStart(), r.serialCount(), r.serialPad());
     }
 
     public record NetworkPrintRequest(double widthMm, double heightMm, Integer dpi,

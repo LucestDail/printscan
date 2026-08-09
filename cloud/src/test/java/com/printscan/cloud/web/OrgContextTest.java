@@ -2,6 +2,8 @@ package com.printscan.cloud.web;
 
 import com.printscan.cloud.domain.Organization;
 import com.printscan.cloud.domain.OrganizationRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -28,14 +30,25 @@ class OrgContextTest {
     void 키없고_단일org면_폴백() {
         OrganizationRepository repo = mock(OrganizationRepository.class);
         when(repo.findAll()).thenReturn(List.of(org(7, "K")));
-        assertEquals(7L, new OrgContext(repo).resolve(null).getId());
+        assertEquals(7L, new OrgContext(repo).resolve((String) null).getId());
     }
 
     @Test
     void 키없고_멀티org면_거부() {
         OrganizationRepository repo = mock(OrganizationRepository.class);
         when(repo.findAll()).thenReturn(List.of(org(1, "A"), org(2, "B")));
-        assertThrows(IllegalArgumentException.class, () -> new OrgContext(repo).resolve(null));
+        assertThrows(IllegalArgumentException.class, () -> new OrgContext(repo).resolve((String) null));
+    }
+
+    @Test
+    void 세션_orgId로_해석() {
+        OrganizationRepository repo = mock(OrganizationRepository.class);
+        when(repo.findById(5L)).thenReturn(Optional.of(org(5, "K")));
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpSession s = mock(HttpSession.class);
+        when(req.getSession(false)).thenReturn(s);
+        when(s.getAttribute("orgId")).thenReturn(5L);
+        assertEquals(5L, new OrgContext(repo).resolve(req).getId());
     }
 
     @Test
