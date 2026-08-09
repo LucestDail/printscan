@@ -127,6 +127,15 @@
         <button class="btn btn-primary" id="btnNetPrint" style="margin-top:var(--space-sm);width:100%;" th:text="#{net.btn}">이 장비로 인쇄</button>
         <div class="muted" style="margin-top:6px;" th:text="#{net.note}">…</div>
       </div>
+
+      <div class="card">
+        <h3 th:text="#{tpl.title}">중앙 템플릿</h3>
+        <table><tbody id="tplBody"></tbody></table>
+        <label th:text="#{net.vars}">이름</label><input id="tplName" placeholder="name">
+        <label th:text="#{tpl.elements}">요소 JSON</label>
+        <textarea id="tplElements" rows="4"></textarea>
+        <button class="btn btn-dark-utility" id="btnAddTpl" style="margin-top:var(--space-xs);width:100%;" th:text="#{tpl.add}">템플릿 추가</button>
+      </div>
     </div>
   </div>
 </div>

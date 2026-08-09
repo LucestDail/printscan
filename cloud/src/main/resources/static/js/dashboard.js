@@ -43,6 +43,11 @@ async function refresh() {
     renderMap('cByLine', consume.byLine); renderMap('cByOp', consume.byOperator); renderMap('cByProd', consume.byProduct);
     $('cTotal').textContent = consume.total || 0;
 
+    const tpls = await adminFetch('/api/admin/templates').then(r=>r.json());
+    $('tplBody').innerHTML = (tpls||[]).map(x=>`<tr><td>${x.name}</td><td class="muted">${x.widthMm}×${x.heightMm}mm</td>
+      <td><a class="text-link" href="#" onclick="delTpl(${x.id});return false;">✕</a></td></tr>`).join('')
+      || '<tr><td class="muted">–</td></tr>';
+
     const sel = $('npDevice'), cur = sel.value;
     sel.innerHTML = devs.map(d=>`<option value="${d.id}">#${d.id} ${d.name}</option>`).join('');
     if (cur) sel.value = cur;
@@ -81,8 +86,16 @@ async function netPrint() {
   refresh();
 }
 
+async function addTpl() {
+  const body = { name: $('tplName').value || 'template', widthMm: 40, heightMm: 25, dpi: 203, elementsJson: $('tplElements').value || '[]' };
+  const res = await adminFetch('/api/admin/templates', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (res.ok) { $('tplName').value=''; $('tplElements').value=''; refresh(); } else toast('추가 실패');
+}
+window.delTpl = async (id) => { await adminFetch('/api/admin/templates/'+id, {method:'DELETE'}); refresh(); };
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadI18n(document.documentElement.lang || 'ko');
+  const at = document.getElementById('btnAddTpl'); if (at) at.addEventListener('click', addTpl);
   const lo = $('navLogout');
   if (lo) lo.addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('PS_ORG_KEY'); location.href = '/login'; });
   $('npElements').value = DEFAULT_ELEMENTS;
