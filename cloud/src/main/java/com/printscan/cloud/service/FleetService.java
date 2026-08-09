@@ -28,6 +28,7 @@ public class FleetService {
     private final ConsumptionLogRepository consumptions;
     private final CloudTemplateRepository templates;
     private final AlertService alerts;
+    private final OrgKeyResolver keyResolver;
 
     // ── 중앙 템플릿(테넌트 스코프) ──
     @Transactional(readOnly = true)
@@ -71,7 +72,7 @@ public class FleetService {
     // ── 디바이스 등록(아웃바운드) ──
     @Transactional
     public Device register(String orgApiKey, String name, String printerMode, String line) {
-        Organization org = orgs.findByApiKey(orgApiKey)
+        Organization org = keyResolver.resolve(orgApiKey)   // 현재 키 또는 유예기간 내 직전 키
                 .orElseThrow(() -> new ApiException("error.badOrgKey"));
         Device d = new Device();
         d.setOrgId(org.getId());
@@ -87,6 +88,45 @@ public class FleetService {
     public Device authDevice(String token) {
         return devices.findByDeviceToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("잘못된 deviceToken"));
+    }
+
+    // ── org-key 로테이션 ──
+    private static final java.security.SecureRandom RNG = new java.security.SecureRandom();
+    private static final long GRACE_MAX_MIN = 7 * 24 * 60; // 유예 상한 7일
+
+    /** 새 org-key 발급. 직전 키는 graceMinutes 동안만 유효(0=즉시 폐기). 반환=신규 키+직전 키 만료시각. */
+    @Transactional
+    public Map<String, Object> rotateOrgKey(Long orgId, long graceMinutes) {
+        Organization o = orgs.findById(orgId).orElseThrow(() -> new ApiException("error.session"));
+        long grace = Math.max(0, Math.min(graceMinutes, GRACE_MAX_MIN));
+        String newKey = generateKey();
+        o.setPreviousApiKey(o.getApiKey());
+        o.setPreviousKeyExpiresAt(grace > 0 ? LocalDateTime.now().plusMinutes(grace) : null);
+        o.setApiKey(newKey);
+        o.setKeyRotatedAt(LocalDateTime.now());
+        orgs.save(o);
+        log.info("[cloud] org #{} 키 로테이션 (유예 {}분)", orgId, grace);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("apiKey", newKey);
+        res.put("previousKeyExpiresAt", o.getPreviousKeyExpiresAt());
+        return res;
+    }
+
+    /** 직전 키 즉시 폐기(키 유출 대응). */
+    @Transactional
+    public void revokePreviousKey(Long orgId) {
+        Organization o = orgs.findById(orgId).orElseThrow(() -> new ApiException("error.session"));
+        o.setPreviousApiKey(null);
+        o.setPreviousKeyExpiresAt(null);
+        orgs.save(o);
+        log.info("[cloud] org #{} 직전 키 즉시 폐기", orgId);
+    }
+
+    /** URL-safe 랜덤 키(추측 불가). */
+    private static String generateKey() {
+        byte[] b = new byte[24];
+        RNG.nextBytes(b);
+        return "ORG-" + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(b);
     }
 
     // ── 폴링: 다음 QUEUED 잡을 원자적으로 클레임(→SENT) ──

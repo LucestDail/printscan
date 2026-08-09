@@ -5,5 +5,6 @@ import java.util.Optional;
 
 public interface OrganizationRepository extends JpaRepository<Organization, Long> {
     Optional<Organization> findByApiKey(String apiKey);
+    Optional<Organization> findByPreviousApiKey(String previousApiKey);
     Optional<Organization> findByName(String name);
 }

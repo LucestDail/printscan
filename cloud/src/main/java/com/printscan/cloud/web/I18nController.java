@@ -22,7 +22,10 @@ public class I18nController {
             "dev.online", "dev.offline",
             "job.status.QUEUED", "job.status.SENT", "job.status.DONE", "job.status.FAILED",
             "empty.devices", "empty.stock", "empty.jobs",
-            "toast.selectDevice", "toast.enqueued", "toast.enqueueFail"
+            "toast.selectDevice", "toast.enqueued", "toast.enqueueFail",
+            "org.key.previousActive", "org.key.rotatedAt", "org.key.confirmRotate",
+            "org.key.rotateFail", "org.key.rotated", "org.key.confirmRevoke",
+            "org.key.revoked", "org.key.copied"
     );
 
     @GetMapping("/api/i18n/{lang}.json")

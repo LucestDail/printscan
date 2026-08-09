@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +23,7 @@ class FleetServiceTest {
     @Autowired TestEntityManager em;
 
     @Autowired com.printscan.cloud.domain.CloudTemplateRepository tpls;
-    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons, tpls, new AlertService("")); }
+    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons, tpls, new AlertService(""), new OrgKeyResolver(orgs)); }
 
     private Device device() { return device("K"); }
 
@@ -87,5 +88,64 @@ class FleetServiceTest {
         assertEquals(1, n);
         em.flush(); em.clear();
         assertEquals(PrintJobCloud.Status.QUEUED, jobs.findById(j.getId()).get().getStatus());
+    }
+
+    // ── org-key 로테이션 ──
+
+    private OrgKeyResolver resolver() { return new OrgKeyResolver(orgs); }
+
+    @Test
+    void 로테이션_신규키_등록_유예기간_직전키_공존() {
+        FleetService s = svc();
+        Organization o = new Organization(); o.setName("R"); o.setApiKey("OLD-KEY"); orgs.save(o);
+
+        Map<String, Object> res = s.rotateOrgKey(o.getId(), 60); // 60분 유예
+        String newKey = (String) res.get("apiKey");
+        em.flush(); em.clear();
+
+        assertNotEquals("OLD-KEY", newKey, "신규 키는 달라야");
+        assertTrue(newKey.startsWith("ORG-"));
+        // 신규 키로 등록 OK
+        assertNotNull(s.register(newKey, "d-new", "cups", "L"));
+        // 유예기간 내 직전 키로도 등록 OK(무중단)
+        assertNotNull(s.register("OLD-KEY", "d-old", "cups", "L"));
+    }
+
+    @Test
+    void 로테이션_유예0_직전키_즉시무효() {
+        FleetService s = svc();
+        Organization o = new Organization(); o.setName("R0"); o.setApiKey("OLD0"); orgs.save(o);
+
+        String newKey = (String) s.rotateOrgKey(o.getId(), 0).get("apiKey"); // 유예 없음
+        em.flush(); em.clear();
+
+        assertTrue(resolver().resolve(newKey).isPresent(), "신규 키 유효");
+        assertTrue(resolver().resolve("OLD0").isEmpty(), "직전 키 즉시 무효");
+    }
+
+    @Test
+    void 만료된_직전키_거부() {
+        FleetService s = svc();
+        Organization o = new Organization(); o.setName("RE"); o.setApiKey("CUR"); orgs.save(o);
+        s.rotateOrgKey(o.getId(), 60);
+        // 직전 키 만료 시각을 과거로 강제
+        Organization reloaded = orgs.findByApiKey(o.getApiKey()).orElseThrow();
+        reloaded.setPreviousKeyExpiresAt(LocalDateTime.now().minusMinutes(1));
+        orgs.save(reloaded);
+        em.flush(); em.clear();
+
+        assertTrue(resolver().resolve("CUR").isEmpty(), "만료된 직전 키는 거부");
+    }
+
+    @Test
+    void 직전키_즉시폐기() {
+        FleetService s = svc();
+        Organization o = new Organization(); o.setName("RV"); o.setApiKey("CUR2"); orgs.save(o);
+        s.rotateOrgKey(o.getId(), 60);
+        assertTrue(resolver().resolve("CUR2").isPresent(), "폐기 전엔 유효");
+
+        s.revokePreviousKey(o.getId());
+        em.flush(); em.clear();
+        assertTrue(resolver().resolve("CUR2").isEmpty(), "폐기 후 직전 키 무효");
     }
 }

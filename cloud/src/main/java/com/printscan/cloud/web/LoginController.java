@@ -2,6 +2,7 @@ package com.printscan.cloud.web;
 
 import com.printscan.cloud.domain.Organization;
 import com.printscan.cloud.domain.OrganizationRepository;
+import com.printscan.cloud.service.OrgKeyResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class LoginController {
 
     private final OrganizationRepository orgs;
+    private final OrgKeyResolver keyResolver;
 
     @PostMapping("/api/login")
     public ResponseEntity<?> login(@RequestBody(required = false) Map<String, String> body, HttpServletRequest req) {
@@ -26,7 +28,7 @@ public class LoginController {
             if (all.size() != 1) return ResponseEntity.status(401).body(Map.of("error", "조직 키가 필요합니다."));
             org = all.get(0);
         } else {
-            org = orgs.findByApiKey(key).orElse(null);
+            org = keyResolver.resolve(key).orElse(null);   // 현재 키 또는 유예기간 내 직전 키
             if (org == null) return ResponseEntity.status(401).body(Map.of("error", "잘못된 조직 키"));
         }
         req.getSession(true).setAttribute(OrgContext.SESSION_ORG, org.getId());

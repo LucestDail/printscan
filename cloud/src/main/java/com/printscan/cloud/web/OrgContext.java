@@ -2,6 +2,7 @@ package com.printscan.cloud.web;
 
 import com.printscan.cloud.domain.Organization;
 import com.printscan.cloud.domain.OrganizationRepository;
+import com.printscan.cloud.service.OrgKeyResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.List;
 public class OrgContext {
 
     private final OrganizationRepository orgs;
+    private final OrgKeyResolver keyResolver;
 
     public static final String SESSION_ORG = "orgId";
 
@@ -41,7 +43,7 @@ public class OrgContext {
     @Transactional(readOnly = true)
     public Organization resolve(String orgKey) {
         if (orgKey != null && !orgKey.isBlank()) {
-            return orgs.findByApiKey(orgKey).orElseThrow(() -> new ApiException("error.badOrgKey"));
+            return keyResolver.resolve(orgKey).orElseThrow(() -> new ApiException("error.badOrgKey"));
         }
         List<Organization> all = orgs.findAll();
         if (all.size() == 1) return all.get(0);

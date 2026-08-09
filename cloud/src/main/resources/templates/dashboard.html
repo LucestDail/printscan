@@ -136,6 +136,23 @@
         <textarea id="tplElements" rows="4"></textarea>
         <button class="btn btn-dark-utility" id="btnAddTpl" style="margin-top:var(--space-xs);width:100%;" th:text="#{tpl.add}">템플릿 추가</button>
       </div>
+
+      <div class="card">
+        <h3 th:text="#{org.key.title}">조직 키</h3>
+        <div class="muted" style="margin-bottom:4px;" th:text="#{org.key.current}">현재 키</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input id="orgKeyVal" readonly style="flex:1;font-family:monospace;">
+          <button class="btn btn-dark-utility" id="btnCopyKey" th:text="#{org.key.copy}">복사</button>
+        </div>
+        <div id="orgKeyStatus" class="muted" style="margin-top:6px;"></div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:var(--space-sm);">
+          <label th:text="#{org.key.grace}">유예(분)</label>
+          <input id="orgGrace" type="number" value="60" min="0" max="10080" style="width:90px;">
+        </div>
+        <button class="btn btn-primary" id="btnRotateKey" style="margin-top:var(--space-xs);width:100%;" th:text="#{org.key.rotate}">키 재발급</button>
+        <button class="btn btn-dark-utility" id="btnRevokeKey" style="margin-top:var(--space-xs);width:100%;" th:text="#{org.key.revoke}">직전 키 즉시 폐기</button>
+        <div class="muted" style="margin-top:6px;" th:text="#{org.key.warn}">…</div>
+      </div>
     </div>
   </div>
 </div>

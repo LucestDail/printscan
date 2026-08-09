@@ -89,6 +89,36 @@ async function addTpl() {
 }
 window.delTpl = async (id) => { await adminFetch('/api/admin/templates/'+id, {method:'DELETE'}); refresh(); };
 
+// ── org-key 로테이션 ──
+async function loadOrgKey() {
+  try {
+    const k = await adminFetch('/api/admin/org/key').then(r=>r.ok?r.json():null);
+    if (!k) return;
+    $('orgKeyVal').value = k.apiKey;
+    let status = '';
+    if (k.previousKeyActive) status = t('org.key.previousActive', [fmt(k.previousKeyExpiresAt)]);
+    else if (k.keyRotatedAt) status = t('org.key.rotatedAt', [fmt(k.keyRotatedAt)]);
+    $('orgKeyStatus').textContent = status;
+  } catch(_) {}
+}
+async function rotateKey() {
+  if (!confirm(t('org.key.confirmRotate'))) return;
+  const grace = parseInt($('orgGrace').value);
+  const res = await adminFetch('/api/admin/org/rotate-key', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({graceMinutes: isNaN(grace)?60:grace})});
+  if (!res.ok) { toast(t('org.key.rotateFail')); return; }
+  const j = await res.json();
+  $('orgKeyVal').value = j.apiKey;
+  toast(t('org.key.rotated'));
+  loadOrgKey();
+}
+async function revokeKey() {
+  if (!confirm(t('org.key.confirmRevoke'))) return;
+  const res = await adminFetch('/api/admin/org/revoke-previous-key', {method:'POST'});
+  if (!res.ok) { toast(t('org.key.rotateFail')); return; }
+  toast(t('org.key.revoked'));
+  loadOrgKey();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadI18n(document.documentElement.lang || 'ko');
   const at = document.getElementById('btnAddTpl'); if (at) at.addEventListener('click', addTpl);
@@ -96,6 +126,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (lo) lo.addEventListener('click', async (e) => { e.preventDefault(); try { await fetch('/api/logout', {method:'POST'}); } catch(_){} location.href = '/login'; });
   $('npElements').value = DEFAULT_ELEMENTS;
   $('btnNetPrint').addEventListener('click', netPrint);
+  const br = $('btnRotateKey'); if (br) br.addEventListener('click', rotateKey);
+  const bv = $('btnRevokeKey'); if (bv) bv.addEventListener('click', revokeKey);
+  const bc = $('btnCopyKey'); if (bc) bc.addEventListener('click', () => { navigator.clipboard?.writeText($('orgKeyVal').value); toast(t('org.key.copied')); });
+  loadOrgKey();
   refresh();
   setInterval(refresh, 3000);
 });

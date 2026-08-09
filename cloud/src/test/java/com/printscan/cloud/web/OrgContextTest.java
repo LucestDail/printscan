@@ -2,6 +2,7 @@ package com.printscan.cloud.web;
 
 import com.printscan.cloud.domain.Organization;
 import com.printscan.cloud.domain.OrganizationRepository;
+import com.printscan.cloud.service.OrgKeyResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
@@ -23,21 +24,21 @@ class OrgContextTest {
     void 키있으면_해당org() {
         OrganizationRepository repo = mock(OrganizationRepository.class);
         when(repo.findByApiKey("K")).thenReturn(Optional.of(org(1, "K")));
-        assertEquals(1L, new OrgContext(repo).resolve("K").getId());
+        assertEquals(1L, new OrgContext(repo, new OrgKeyResolver(repo)).resolve("K").getId());
     }
 
     @Test
     void 키없고_단일org면_폴백() {
         OrganizationRepository repo = mock(OrganizationRepository.class);
         when(repo.findAll()).thenReturn(List.of(org(7, "K")));
-        assertEquals(7L, new OrgContext(repo).resolve((String) null).getId());
+        assertEquals(7L, new OrgContext(repo, new OrgKeyResolver(repo)).resolve((String) null).getId());
     }
 
     @Test
     void 키없고_멀티org면_거부() {
         OrganizationRepository repo = mock(OrganizationRepository.class);
         when(repo.findAll()).thenReturn(List.of(org(1, "A"), org(2, "B")));
-        assertThrows(IllegalArgumentException.class, () -> new OrgContext(repo).resolve((String) null));
+        assertThrows(IllegalArgumentException.class, () -> new OrgContext(repo, new OrgKeyResolver(repo)).resolve((String) null));
     }
 
     @Test
@@ -48,13 +49,13 @@ class OrgContextTest {
         HttpSession s = mock(HttpSession.class);
         when(req.getSession(false)).thenReturn(s);
         when(s.getAttribute("orgId")).thenReturn(5L);
-        assertEquals(5L, new OrgContext(repo).resolve(req).getId());
+        assertEquals(5L, new OrgContext(repo, new OrgKeyResolver(repo)).resolve(req).getId());
     }
 
     @Test
     void 잘못된키_거부() {
         OrganizationRepository repo = mock(OrganizationRepository.class);
         when(repo.findByApiKey("BAD")).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> new OrgContext(repo).resolve("BAD"));
+        assertThrows(IllegalArgumentException.class, () -> new OrgContext(repo, new OrgKeyResolver(repo)).resolve("BAD"));
     }
 }

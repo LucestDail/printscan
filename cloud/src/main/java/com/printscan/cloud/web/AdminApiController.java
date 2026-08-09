@@ -74,4 +74,36 @@ public class AdminApiController {
                                       String elementsJson, Map<String, String> variables, Integer copies,
                                       String seqVar, String serialPrefix, Integer serialStart,
                                       Integer serialCount, Integer serialPad) {}
+
+    // ── org-key 로테이션(테넌트 셀프서비스, 호출자 org 로 한정) ──
+
+    /** 현재 org-key + 로테이션 상태(직전 키 유효 여부/만료 시각). 키 유출 대비 UI 표시용. */
+    @GetMapping("/org/key")
+    public Map<String, Object> orgKey(HttpServletRequest req) {
+        Organization o = orgContext.resolve(req);
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("apiKey", o.getApiKey());
+        m.put("previousKeyExpiresAt", o.getPreviousKeyExpiresAt());
+        m.put("keyRotatedAt", o.getKeyRotatedAt());
+        boolean graceActive = o.getPreviousApiKey() != null && o.getPreviousKeyExpiresAt() != null
+                && o.getPreviousKeyExpiresAt().isAfter(java.time.LocalDateTime.now());
+        m.put("previousKeyActive", graceActive);
+        return m;
+    }
+
+    /** 키 로테이션 — 신규 키 발급. graceMinutes(기본 60, 최대 7일) 동안 직전 키도 유효. 0=즉시 폐기. */
+    @PostMapping("/org/rotate-key")
+    public Map<String, Object> rotateKey(HttpServletRequest req, @RequestBody(required = false) Map<String, Object> body) {
+        Long orgId = org(req);
+        long grace = 60;
+        if (body != null && body.get("graceMinutes") != null) grace = ((Number) body.get("graceMinutes")).longValue();
+        return fleet.rotateOrgKey(orgId, grace);
+    }
+
+    /** 직전 키 즉시 폐기(유출 대응). */
+    @PostMapping("/org/revoke-previous-key")
+    public ResponseEntity<Void> revokePrevious(HttpServletRequest req) {
+        fleet.revokePreviousKey(org(req));
+        return ResponseEntity.noContent().build();
+    }
 }
