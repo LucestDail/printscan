@@ -16,10 +16,18 @@ scp -r deploy pi@<PI_IP>:/tmp/deploy
 # 2) Pi 에서 설치 스크립트 (java17+cups+한글폰트+raw큐+systemd 자동)
 sudo bash /tmp/deploy/install-edge.sh /tmp/app.jar USB
 
-# 3) 라인명/허브주소 설정
-sudo nano /opt/printscan-edge/edge.env      # PRINTSCAN_LINE_NAME, PRINTSCAN_CLOUD_BASE_URL 등
-sudo systemctl restart printscan-edge
+# 3) 라인명/허브주소 설정 — 수동(nano) 또는 반복가능 프로비저닝 스크립트
+sudo bash /tmp/deploy/provision-edge.sh \
+  --line "1라인" --hub "http://<HUB_IP>:8092" --org-key "<조직키>" --device "edge-1라인"
+#   (또는 수동) sudo nano /opt/printscan-edge/edge.env ; sudo systemctl restart printscan-edge
+
+# 4) 수용검사 — 통과(FAIL=0)해야 유닛 인계
+EDGE_URL=http://localhost:8091 EDGE_USER=admin EDGE_PASS=<pw> \
+HUB_URL=http://<HUB_IP>:8092 DEVICE_NAME=edge-1라인 \
+bash /tmp/deploy/acceptance-test.sh --print
 ```
+
+> 파일럿 전체 로드맵(BOM·이미지화·토폴로지·punch-list)은 저장소 루트 `PILOT.md` 참조.
 
 ## 확인
 - 로컬 UI: `http://<PI_IP>:8091/` (디자이너/스캔)
