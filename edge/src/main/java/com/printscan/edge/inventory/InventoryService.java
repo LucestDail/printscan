@@ -1,6 +1,7 @@
 package com.printscan.edge.inventory;
 
 import com.printscan.edge.config.AlertService;
+import com.printscan.edge.web.ApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,13 +34,13 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public Product byCode(String code) {
         return products.findByCode(code)
-                .orElseThrow(() -> new IllegalArgumentException("제품 없음(code=" + code + ")"));
+                .orElseThrow(() -> new ApiException("error.productNotFound", code));
     }
 
     @Transactional
     public Product save(Product p) {
         if (p.getId() == null) {
-            products.findByCode(p.getCode()).ifPresent(x -> { throw new IllegalArgumentException("이미 존재하는 code: " + p.getCode()); });
+            products.findByCode(p.getCode()).ifPresent(x -> { throw new ApiException("error.productExists", p.getCode()); });
         }
         return products.save(p);
     }
@@ -70,11 +71,11 @@ public class InventoryService {
             case IN -> { products.applyDelta(p.getId(), abs); applied = abs; }
             case OUT -> {
                 if (products.applyDelta(p.getId(), -abs) == 0)  // 원자적: 음수면 미적용
-                    throw new IllegalArgumentException("재고가 부족합니다(현재=" + before + ", 출고=" + abs + ")");
+                    throw new ApiException("error.stockInsufficient", before, abs);
                 applied = -abs;
             }
             case ADJUST -> { products.setQuantity(p.getId(), qty); applied = qty - before; }
-            default -> throw new IllegalArgumentException("알 수 없는 유형: " + type);
+            default -> throw new ApiException("error.badRequest");
         }
         Product fresh = products.findById(p.getId()).orElseThrow();
         InventoryMovement m = record(fresh, type, applied, fresh.getQuantity(), note, operator, line, fromPrint);

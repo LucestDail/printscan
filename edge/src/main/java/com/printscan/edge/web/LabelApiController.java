@@ -5,6 +5,8 @@ import com.printscan.edge.label.LabelTemplate;
 import com.printscan.edge.label.RenderRequest;
 import com.printscan.edge.label.SerialSpec;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,11 @@ import java.util.Map;
 public class LabelApiController {
 
     private final LabelService service;
+    private final MessageSource messages;
+
+    private String msg(String code, Object... args) {
+        return messages.getMessage(code, args, code, LocaleContextHolder.getLocale());
+    }
 
     @GetMapping("/templates")
     public List<LabelTemplate> list() { return service.findAll(); }
@@ -56,12 +63,12 @@ public class LabelApiController {
     @PostMapping("/print")
     public ResponseEntity<String> print(@RequestBody RenderRequest req) {
         if (req.copies() != null && (req.copies() < 1 || req.copies() > MAX_COPIES))
-            return ResponseEntity.badRequest().body("매수는 1~" + MAX_COPIES + " 범위여야 합니다.");
+            throw new ApiException("error.copiesRange", MAX_COPIES);
         try {
             service.print(req);
-            return ResponseEntity.ok("출력이 완료되었습니다.");
+            return ResponseEntity.ok(msg("print.done"));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(msg("print.printerError", e.getMessage()));
         }
     }
 
@@ -69,17 +76,17 @@ public class LabelApiController {
     @PostMapping("/print-batch")
     public ResponseEntity<String> printBatch(@RequestBody BatchRequest b) {
         if (b.count() < 1 || b.count() > MAX_COPIES)
-            return ResponseEntity.badRequest().body("개수는 1~" + MAX_COPIES + " 범위여야 합니다.");
+            throw new ApiException("error.copiesRange", MAX_COPIES);
         if (b.pad() < 0 || b.pad() > 12)
-            return ResponseEntity.badRequest().body("자리수는 0~12 범위여야 합니다.");
+            throw new ApiException("error.padRange");
         try {
             RenderRequest base = new RenderRequest(b.id(), b.name(), b.widthMm(), b.heightMm(), b.dpi(),
                     b.elementsJson(), b.variables(), 1, b.operator());
             SerialSpec spec = new SerialSpec(b.seqVar(), b.prefix(), b.start(), b.count(), b.pad());
             service.printBatch(base, spec);
-            return ResponseEntity.ok(b.count() + "장 배치 출력 완료 (" + spec.format(0) + "~" + spec.format(b.count() - 1) + ")");
+            return ResponseEntity.ok(msg("print.batchDone", b.count(), spec.format(0), spec.format(b.count() - 1)));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(msg("print.printerError", e.getMessage()));
         }
     }
 
@@ -98,9 +105,9 @@ public class LabelApiController {
                                              @RequestParam(defaultValue = "203") int dpi) {
         try {
             service.printRuler(widthMm, heightMm, dpi);
-            return ResponseEntity.ok("눈금자를 인쇄했습니다. 잘리는 지점이 실제 인쇄 가능폭입니다.");
+            return ResponseEntity.ok(msg("print.rulerDone"));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(msg("print.printerError", e.getMessage()));
         }
     }
 
@@ -109,9 +116,9 @@ public class LabelApiController {
     public ResponseEntity<String> calibrate() {
         try {
             service.calibrate();
-            return ResponseEntity.ok("캘리브레이션을 시작했습니다. 프린터가 라벨을 몇 장 피드합니다.");
+            return ResponseEntity.ok(msg("print.calibrateDone"));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("프린터 오류: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(msg("print.printerError", e.getMessage()));
         }
     }
 

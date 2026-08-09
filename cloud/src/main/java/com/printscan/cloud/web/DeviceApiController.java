@@ -21,12 +21,9 @@ public class DeviceApiController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
-        try {
-            Device d = fleet.register(body.get("orgApiKey"), body.get("name"), body.get("printerMode"), body.get("line"));
-            return ResponseEntity.ok(Map.of("deviceId", d.getId(), "deviceToken", d.getDeviceToken()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+        // 예외는 GlobalExceptionHandler 가 요청 로케일로 번역(자체 catch 금지).
+        Device d = fleet.register(body.get("orgApiKey"), body.get("name"), body.get("printerMode"), body.get("line"));
+        return ResponseEntity.ok(Map.of("deviceId", d.getId(), "deviceToken", d.getDeviceToken()));
     }
 
     /** 다음 인쇄 잡 폴링. 없으면 204. */

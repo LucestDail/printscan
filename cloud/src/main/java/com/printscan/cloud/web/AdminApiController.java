@@ -59,11 +59,11 @@ public class AdminApiController {
     @PostMapping("/devices/{id}/print")
     public PrintJobCloud print(HttpServletRequest req, @PathVariable Long id, @RequestBody NetworkPrintRequest r) throws Exception {
         Long orgId = org(req);
-        if (r.copies() != null && r.copies() > 1000) throw new IllegalArgumentException("매수 상한 초과(≤1000)");
+        if (r.copies() != null && r.copies() > 1000) throw new ApiException("error.copiesMax", 1000);
         if (r.serialCount() != null && (r.serialCount() < 0 || r.serialCount() > 5000))
-            throw new IllegalArgumentException("일련번호 개수 상한 초과(≤5000)");
+            throw new ApiException("error.serialMax", 5000);
         if (r.elementsJson() != null && r.elementsJson().length() > 100_000)
-            throw new IllegalArgumentException("라벨 정의가 너무 큽니다");
+            throw new ApiException("error.elementsTooBig");
         String varsJson = r.variables() != null ? mapper.writeValueAsString(r.variables()) : "{}";
         return fleet.enqueuePrint(orgId, id, r.widthMm(), r.heightMm(), r.dpi(),
                 r.elementsJson(), varsJson, r.copies() != null ? r.copies() : 1,

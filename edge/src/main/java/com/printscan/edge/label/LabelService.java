@@ -41,7 +41,7 @@ public class LabelService {
     @Transactional(readOnly = true)
     public LabelTemplate get(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("템플릿을 찾을 수 없습니다: " + id));
+                .orElseThrow(() -> new com.printscan.edge.web.ApiException("error.templateNotFound", id));
     }
 
     @Transactional

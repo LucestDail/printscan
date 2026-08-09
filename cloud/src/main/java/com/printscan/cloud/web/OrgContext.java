@@ -33,7 +33,7 @@ public class OrgContext {
         HttpSession s = req.getSession(false);
         if (s != null && s.getAttribute(SESSION_ORG) != null) {
             Long id = (Long) s.getAttribute(SESSION_ORG);
-            return orgs.findById(id).orElseThrow(() -> new IllegalArgumentException("세션 조직 없음"));
+            return orgs.findById(id).orElseThrow(() -> new ApiException("error.session"));
         }
         return resolve(req.getHeader("X-Org-Key"));
     }
@@ -41,11 +41,10 @@ public class OrgContext {
     @Transactional(readOnly = true)
     public Organization resolve(String orgKey) {
         if (orgKey != null && !orgKey.isBlank()) {
-            return orgs.findByApiKey(orgKey)
-                    .orElseThrow(() -> new IllegalArgumentException("잘못된 X-Org-Key"));
+            return orgs.findByApiKey(orgKey).orElseThrow(() -> new ApiException("error.badOrgKey"));
         }
         List<Organization> all = orgs.findAll();
         if (all.size() == 1) return all.get(0);
-        throw new IllegalArgumentException("멀티테넌트 환경: X-Org-Key 헤더가 필요합니다.");
+        throw new ApiException("error.orgKeyRequired");
     }
 }

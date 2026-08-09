@@ -1,6 +1,7 @@
 package com.printscan.cloud.service;
 
 import com.printscan.cloud.domain.*;
+import com.printscan.cloud.web.ApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,8 @@ public class FleetService {
     public CloudTemplate saveTemplate(Long orgId, CloudTemplate t) {
         if (t.getId() != null) {
             CloudTemplate ex = templates.findById(t.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("템플릿 없음"));
-            if (!ex.getOrgId().equals(orgId)) throw new IllegalArgumentException("이 조직의 템플릿이 아닙니다.");
+                    .orElseThrow(() -> new ApiException("error.templateNotFound"));
+            if (!ex.getOrgId().equals(orgId)) throw new ApiException("error.templateNotOwned");
         }
         t.setOrgId(orgId);
         return templates.save(t);
@@ -47,7 +48,7 @@ public class FleetService {
     public void deleteTemplate(Long orgId, Long id) {
         CloudTemplate ex = templates.findById(id).orElse(null);
         if (ex == null) return;
-        if (!ex.getOrgId().equals(orgId)) throw new IllegalArgumentException("이 조직의 템플릿이 아닙니다.");
+        if (!ex.getOrgId().equals(orgId)) throw new ApiException("error.templateNotOwned");
         templates.deleteById(id);
     }
 
@@ -71,7 +72,7 @@ public class FleetService {
     @Transactional
     public Device register(String orgApiKey, String name, String printerMode, String line) {
         Organization org = orgs.findByApiKey(orgApiKey)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 orgApiKey"));
+                .orElseThrow(() -> new ApiException("error.badOrgKey"));
         Device d = new Device();
         d.setOrgId(org.getId());
         d.setName(name != null ? name : "device");
@@ -106,8 +107,8 @@ public class FleetService {
     @Transactional
     public void ack(Device d, Long jobId, boolean ok, String message) {
         PrintJobCloud job = jobs.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("job 없음: " + jobId));
-        if (!job.getDeviceId().equals(d.getId())) throw new IllegalArgumentException("소유 불일치");
+                .orElseThrow(() -> new ApiException("error.jobNotFound"));
+        if (!job.getDeviceId().equals(d.getId())) throw new ApiException("error.deviceNotOwned");
         if (job.getStatus() != PrintJobCloud.Status.SENT) {
             log.info("[fleet] job {} ack 무시(상태={})", jobId, job.getStatus()); // 재ack/중복 방지
             return;
@@ -157,8 +158,8 @@ public class FleetService {
                                       String elementsJson, String variablesJson, int copies,
                                       String seqVar, String serialPrefix, Integer serialStart,
                                       Integer serialCount, Integer serialPad) {
-        Device d = devices.findById(deviceId).orElseThrow(() -> new IllegalArgumentException("device 없음"));
-        if (!d.getOrgId().equals(callerOrgId)) throw new IllegalArgumentException("이 조직의 장비가 아닙니다."); // 테넌트 격리
+        Device d = devices.findById(deviceId).orElseThrow(() -> new ApiException("error.deviceNotFound"));
+        if (!d.getOrgId().equals(callerOrgId)) throw new ApiException("error.deviceNotOwned"); // 테넌트 격리
         PrintJobCloud job = new PrintJobCloud();
         job.setOrgId(d.getOrgId());
         job.setDeviceId(deviceId);
