@@ -147,8 +147,26 @@ sudo bash deploy/restore.sh <backup.zip> printscan-edge /opt/printscan-edge/data
 
 ---
 
+## 8-1. 부록 — `.25`를 Pi로 가정한 전체 드라이런 (2026-08-10)
+
+실 Pi 입고 지연(~3주)으로, `.25`(x86 Ubuntu 24.04 + 실 Zebra ZD421 USB)를 Pi로 간주해 **§4 절차 전체를 정식 systemd 경로로 완주**. 목적=실 Pi 오기 전에 자동화의 깨지는 지점 선제거.
+
+| 단계 | 명령 | 결과 |
+|---|---|---|
+| 설치 | `install-edge.sh /tmp/app.jar USB` | ✅ printscan 유저·`/opt/printscan-edge`·raw큐 'zebra'(실 URI)·systemd enable+start. 패키지 idempotent |
+| 프로비저닝 | `provision-edge.sh --line 파일럿-1라인 --hub localhost:8092 --org-key … --device edge-pilot-01` | ✅ edge.env 작성(org-key 마스킹 출력)·재시작 |
+| 수용검사 | `acceptance-test.sh --print` | ✅ **7/7 PASS** (헬스·printer·한글렌더·눈금자·cloud·허브온라인·**실물 인쇄 200**) |
+| 크래시 복구 | `kill -9 <MainPID>` | ✅ systemd `Restart=always` → **6초 내 새 PID active**·헬스 200 재확보 |
+| 부팅 상주 | `systemctl is-enabled` | ✅ `enabled` |
+| 허브 인지 | `GET /api/admin/devices` | ✅ `edge-pilot-01` online:true |
+
+**검증된 것**: 설치·프로비저닝·수용검사·크래시 자동복구·부팅 상주·허브 등록·**실 Zebra 한글+QR 실물 인쇄** 전 경로.
+**여전히 미검증(실 Pi 필요)**: ① ARM64 아키(패키지 arch만 다름, 이름 동일 → 로직 리스크 낮음) ② **물리 전원 재투입(reboot)** — 공유 홈랩이라 프로세스 크래시로 대체 검증(전체 리부팅은 미실시). 실 Pi에서 `sudo reboot` 후 자동 상주만 확인하면 됨.
+> ⇒ 드라이런으로 P3(설치 실행)·P4(실물 인쇄)를 **x86 기준으로 사실상 통과**. 실 Pi에선 이 절차 그대로 + 리부팅 1회 확인이면 인계 가능.
+
+**드라이런 후 `.25` 상태**: edge = **systemd `/opt/printscan-edge`(8091)** 가 정식(기존 수동 `~/printscan-edge` nohup은 중지·방치). 허브 cloud(8092)는 기존 nohup 유지.
+
 ## 9. 한 줄 결론
 
-> **소프트웨어·설치 자동화·수용검사는 파일럿 준비 완료(오늘 `.25` 실증).**
-> 다음 병목은 코드가 아니라 **실 라즈베리파이(ARM64) 1대 확보 → install-edge 실행 → Zebra 실물 인쇄 스모크(P3~P4)**.
-> Pi가 손에 들어오면 이 문서 §4 절차로 반나절 내 첫 유닛 인계 가능.
+> **소프트웨어·설치 자동화·수용검사는 파일럿 준비 완료**, 그리고 **`.25`(x86+실 Zebra)에서 §4 전체 드라이런 통과**(설치·프로비저닝·수용검사 7/7·실물 인쇄·크래시 자동복구·부팅 상주 — §8-1).
+> 남은 실검증은 **실 Pi(ARM64) 입고(~3주) 후 동일 절차 재실행 + 리부팅 1회**뿐. 자동화가 실 리눅스에서 이미 돌았으므로 실 Pi 인계는 반나절 이내 예상.
