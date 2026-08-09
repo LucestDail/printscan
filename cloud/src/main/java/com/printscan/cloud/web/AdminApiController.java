@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.printscan.cloud.domain.*;
 import com.printscan.cloud.service.FleetService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,6 +48,25 @@ public class AdminApiController {
     @GetMapping("/consumption")
     public Map<String, Object> consumption(@RequestHeader(value = ORG, required = false) String k) {
         return fleet.consumption(orgContext.resolve(k).getId());
+    }
+
+    // ── 중앙 템플릿(테넌트 스코프) ──
+    @GetMapping("/templates")
+    public List<CloudTemplate> templates(@RequestHeader(value = ORG, required = false) String k) {
+        return fleet.listTemplates(orgContext.resolve(k).getId());
+    }
+
+    @PostMapping("/templates")
+    public CloudTemplate saveTemplate(@RequestHeader(value = ORG, required = false) String k,
+                                      @RequestBody CloudTemplate t) {
+        return fleet.saveTemplate(orgContext.resolve(k).getId(), t);
+    }
+
+    @DeleteMapping("/templates/{id}")
+    public ResponseEntity<Void> deleteTemplate(@RequestHeader(value = ORG, required = false) String k,
+                                               @PathVariable Long id) {
+        fleet.deleteTemplate(orgContext.resolve(k).getId(), id);
+        return ResponseEntity.noContent().build();
     }
 
     /** 네트워크 출력 지시 — 대상 장비가 호출자 org 소속이어야 함(격리). */

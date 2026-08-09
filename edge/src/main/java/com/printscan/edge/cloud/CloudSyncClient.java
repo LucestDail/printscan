@@ -7,6 +7,8 @@ import com.printscan.edge.inventory.InventoryMovement;
 import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.inventory.Product;
 import com.printscan.edge.label.LabelService;
+import com.printscan.edge.label.LabelTemplate;
+import com.printscan.edge.label.LabelTemplateRepository;
 import com.printscan.edge.label.RenderRequest;
 import com.printscan.edge.label.SerialSpec;
 import jakarta.annotation.PostConstruct;
@@ -39,6 +41,7 @@ public class CloudSyncClient {
     private final PrinterProperties printer;
     private final LineProperties line;
     private final PrintedJobRepository printedJobs;
+    private final LabelTemplateRepository templates;
     private final ObjectMapper mapper = new ObjectMapper();
     private final RestClient http;
 
@@ -52,7 +55,7 @@ public class CloudSyncClient {
     public CloudSyncClient(CloudSyncProperties props, DeviceIdentityRepository identityRepo,
                            LabelService labelService, InventoryService inventory,
                            PrinterProperties printer, LineProperties line,
-                           PrintedJobRepository printedJobs) {
+                           PrintedJobRepository printedJobs, LabelTemplateRepository templates) {
         this.props = props;
         this.identityRepo = identityRepo;
         this.labelService = labelService;
@@ -60,6 +63,7 @@ public class CloudSyncClient {
         this.printer = printer;
         this.line = line;
         this.printedJobs = printedJobs;
+        this.templates = templates;
         // 타임아웃 필수: 허브 반쯤열린 TCP 가 스케줄러 스레드를 무한 블록하지 않도록
         SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
         rf.setConnectTimeout((int) Duration.ofSeconds(2).toMillis());
@@ -151,6 +155,32 @@ public class CloudSyncClient {
                     .retrieve().toBodilessEntity();
         } catch (Exception e) {
             log.debug("[cloud-sync] 폴링 스킵: {}", e.getMessage());
+        }
+    }
+
+    /** 중앙 템플릿 동기화 — 허브의 org 템플릿을 로컬 LabelTemplate 로 upsert(cloudId 기준). */
+    @Scheduled(fixedDelayString = "${printscan.cloud.template-sync-ms:30000}")
+    public void syncTemplates() {
+        if (!props.isEnabled() || token == null) return;
+        try {
+            List<?> list = http.get().uri("/api/device/templates")
+                    .header("X-Device-Token", token).retrieve().body(List.class);
+            if (list == null) return;
+            for (Object o : list) {
+                Map<?, ?> m = (Map<?, ?>) o;
+                Long cid = ((Number) m.get("id")).longValue();
+                LabelTemplate t = templates.findByCloudId(cid).orElseGet(LabelTemplate::new);
+                t.setCloudId(cid);
+                t.setName((String) m.get("name"));
+                t.setWidthMm(num(m.get("widthMm")));
+                t.setHeightMm(num(m.get("heightMm")));
+                t.setDpi(m.get("dpi") != null ? ((Number) m.get("dpi")).intValue() : null);
+                t.setElementsJson((String) m.get("elementsJson"));
+                templates.save(t);
+            }
+            log.debug("[cloud-sync] 템플릿 {}건 동기화", list.size());
+        } catch (Exception e) {
+            log.debug("[cloud-sync] 템플릿 동기화 스킵: {}", e.getMessage());
         }
     }
 

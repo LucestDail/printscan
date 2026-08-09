@@ -45,6 +45,12 @@ public class DeviceApiController {
         return ResponseEntity.ok().build();
     }
 
+    /** 디바이스가 자기 org 의 중앙 템플릿을 폴링으로 받아 로컬 동기화. */
+    @GetMapping("/templates")
+    public java.util.List<com.printscan.cloud.domain.CloudTemplate> templates(@RequestHeader(H) String token) {
+        return fleet.templatesForDevice(fleet.authDevice(token));
+    }
+
     @PostMapping("/heartbeat")
     @SuppressWarnings("unchecked")
     public ResponseEntity<Void> heartbeat(@RequestHeader(H) String token, @RequestBody Map<String, Object> body) {

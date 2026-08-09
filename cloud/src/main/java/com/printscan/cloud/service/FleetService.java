@@ -25,7 +25,35 @@ public class FleetService {
     private final PrintJobRepository jobs;
     private final InventorySnapshotRepository snapshots;
     private final ConsumptionLogRepository consumptions;
+    private final CloudTemplateRepository templates;
     private final AlertService alerts;
+
+    // ── 중앙 템플릿(테넌트 스코프) ──
+    @Transactional(readOnly = true)
+    public List<CloudTemplate> listTemplates(Long orgId) { return templates.findByOrgIdOrderByNameAsc(orgId); }
+
+    @Transactional
+    public CloudTemplate saveTemplate(Long orgId, CloudTemplate t) {
+        if (t.getId() != null) {
+            CloudTemplate ex = templates.findById(t.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("템플릿 없음"));
+            if (!ex.getOrgId().equals(orgId)) throw new IllegalArgumentException("이 조직의 템플릿이 아닙니다.");
+        }
+        t.setOrgId(orgId);
+        return templates.save(t);
+    }
+
+    @Transactional
+    public void deleteTemplate(Long orgId, Long id) {
+        CloudTemplate ex = templates.findById(id).orElse(null);
+        if (ex == null) return;
+        if (!ex.getOrgId().equals(orgId)) throw new IllegalArgumentException("이 조직의 템플릿이 아닙니다.");
+        templates.deleteById(id);
+    }
+
+    /** 디바이스의 org 템플릿(동기화용). */
+    @Transactional(readOnly = true)
+    public List<CloudTemplate> templatesForDevice(Device d) { return templates.findByOrgIdOrderByNameAsc(d.getOrgId()); }
 
     /** 오프라인 디바이스 알림(60초 주기). 한때 접속했던 장비가 60초+ 미접속이면 경고. */
     @Scheduled(fixedDelay = 60000)

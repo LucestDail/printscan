@@ -21,7 +21,8 @@ class FleetServiceTest {
     @Autowired ConsumptionLogRepository cons;
     @Autowired TestEntityManager em;
 
-    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons, new AlertService("")); }
+    @Autowired com.printscan.cloud.domain.CloudTemplateRepository tpls;
+    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons, tpls, new AlertService("")); }
 
     private Device device() { return device("K"); }
 

@@ -31,6 +31,9 @@ public class LabelTemplate {
 
     private String description;
 
+    /** 클라우드 중앙 템플릿에서 동기화된 경우 원본 id(중복 방지). 로컬 전용이면 null. */
+    private Long cloudId;
+
     /** 라벨 물리 규격(mm). 기본값은 가로형(landscape) 미디어 기준. */
     private double widthMm = 40;
     private double heightMm = 25;

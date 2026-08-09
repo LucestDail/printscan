@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface LabelTemplateRepository extends JpaRepository<LabelTemplate, Long> {
     Optional<LabelTemplate> findByName(String name);
+    Optional<LabelTemplate> findByCloudId(Long cloudId);
 }
