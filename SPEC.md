@@ -144,9 +144,11 @@ RenderRequest ──▶ LabelRasterizer(Java2D, mm→px, CJK폰트) ──▶ Bu
 
 ---
 
+> **기계가독 API 문서**: 각 모듈은 OpenAPI 3 스펙(`/v3/api-docs`) + Swagger UI(`/swagger-ui.html`) 제공(springdoc). edge는 문서 경로만 인증 면제, cloud는 개방.
+
 ## 5. API 레퍼런스 — edge (8091)
 
-> 인증: `/actuator/health`·`/design/**`·`/js/**`·`/favicon.ico` 외 **전부 HTTP Basic**(기본 `admin`/`printscan`, 배포 시 env 교체). 오류 응답은 요청 로케일로 번역(§11).
+> 인증: `/actuator/health`·`/design/**`·`/js/**`·`/favicon.ico`·`/v3/api-docs/**`·`/swagger-ui/**` 외 **전부 HTTP Basic**(기본 `admin`/`printscan`, 배포 시 env 교체). 오류 응답은 요청 로케일로 번역(§11).
 
 ### 페이지 (Thymeleaf)
 | Method | Path | 설명 |

@@ -72,6 +72,7 @@
 | DB | H2(파일, 온프렘 기본) · PostgreSQL(SaaS, Flyway 마이그레이션) |
 | 프론트 | 서버렌더(Thymeleaf) + Vanilla JS + Apple 스타일 디자인 토큰 |
 | 관측성 | Actuator, micrometer-prometheus |
+| API 문서 | OpenAPI 3(springdoc): `/swagger-ui.html` · `/v3/api-docs` |
 | 빌드 | Maven (`./mvnw`) |
 | 배포 | systemd + `deploy/` 스크립트, (SaaS) Caddy TLS 프록시 |
 
