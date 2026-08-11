@@ -6,8 +6,9 @@
 한글 라벨을 **서버에서 이미지로 래스터화(^GFA)** 해 "화면 미리보기 = 인쇄물"(WYSIWYG)을 보장하고,
 인쇄를 곧 **자동 출고 기록**으로 연결해 라인/작업자/제품별 소비를 추적한다. 리세일(제품 판매)을 목표로 한다.
 
+- 📘 **사용 가이드: [`GUIDE-FEATURES.md`](GUIDE-FEATURES.md)**(기능별) · **[`GUIDE-USAGE.md`](GUIDE-USAGE.md)**(역할별)
+- 📑 상세 기능 명세서: [`SPEC.md`](SPEC.md) (API 레퍼런스·데이터 모델·프로토콜·설정 전수)
 - 📖 제품 정의: [`SOLUTION.md`](SOLUTION.md) · 🧭 아키텍처/로드맵: [`PLAN-V2.md`](PLAN-V2.md)
-- 📑 **상세 기능 명세서: [`SPEC.md`](SPEC.md)** (API 레퍼런스·데이터 모델·프로토콜·설정 전수)
 - 🚀 파일럿 배포: [`PILOT.md`](PILOT.md) · [`deploy/README-PI.md`](deploy/README-PI.md) · [`deploy/README-HUB.md`](deploy/README-HUB.md)
 
 ---
@@ -104,6 +105,8 @@
 
 | 문서 | 내용 |
 |---|---|
+| [`GUIDE-FEATURES.md`](GUIDE-FEATURES.md) | **기능별 사용 가이드** — 디자이너·인쇄·스캔·소비추적·원격출력·템플릿·키·다국어 |
+| [`GUIDE-USAGE.md`](GUIDE-USAGE.md) | **역할별 사용 가이드** — 현장 작업자·관리자·설치 기사·시스템 관리자 |
 | [`SPEC.md`](SPEC.md) | **상세 기능 명세** — API 레퍼런스, 데이터 모델, 라벨 스키마, 동기화 프로토콜, 설정 전수 |
 | [`SOLUTION.md`](SOLUTION.md) | 제품 관점 정의(물리 구성·토폴로지·핵심 기능) |
 | [`PLAN-V2.md`](PLAN-V2.md) | v2 아키텍처/구현 로드맵 |
