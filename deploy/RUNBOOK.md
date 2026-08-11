@@ -141,6 +141,7 @@ journalctl -u printscan-edge -f               # 실시간 로그
 journalctl -u printscan-edge -n 100 --no-pager
 ```
 - 크래시 시 systemd `Restart=always`(5s)로 자동 재기동. 부팅 자동 상주(`enabled`).
+- **기동 시 보안 점검**: 기본 비밀번호(edge) 또는 데모 org-key(cloud), SaaS admin-token 미설정이면 로그에 `보안 점검` WARN 배너 출력. 배포 전 이 경고가 사라지도록 조치(§7 org-key 로테이션, `PRINTSCAN_SECURITY_PASSWORD`/`PRINTSCAN_HUB_ADMIN_TOKEN` 설정).
 
 ---
 
