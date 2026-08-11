@@ -4,6 +4,9 @@ import com.printscan.edge.config.LineProperties;
 import com.printscan.edge.inventory.InventoryMovement;
 import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.inventory.Product;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +28,7 @@ public class ScanApiController {
     public List<Product> products() { return service.findAll(); }
 
     @PostMapping("/products")
-    public Product createProduct(@RequestBody Product p) {
+    public Product createProduct(@Valid @RequestBody Product p) {
         // 예외는 GlobalExceptionHandler 가 요청 로케일로 번역(자체 catch 금지 — 원시 코드 노출 방지).
         return service.save(p);
     }
@@ -46,7 +49,7 @@ public class ScanApiController {
 
     // ── 입출고 ──
     @PostMapping("/inventory/move")
-    public InventoryMovement move(@RequestBody MoveRequest req) {
+    public InventoryMovement move(@Valid @RequestBody MoveRequest req) {
         // 잘못된 type → enum valueOf 가 IllegalArgumentException → 핸들러가 error.badRequest 로 번역.
         InventoryMovement.Type t = InventoryMovement.Type.valueOf(req.type().toUpperCase());
         return service.move(req.code().trim(), t, req.qty(),
@@ -58,5 +61,6 @@ public class ScanApiController {
         return service.history(limit);
     }
 
-    public record MoveRequest(String code, String type, int qty, String note, String operator) {}
+    public record MoveRequest(@NotBlank String code, @NotBlank String type, @Min(0) int qty,
+                              String note, String operator) {}
 }

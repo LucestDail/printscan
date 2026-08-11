@@ -1,6 +1,8 @@
 package com.printscan.edge.inventory;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,16 +19,21 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     @Column(nullable = false, unique = true)
     private String code;
 
+    @NotBlank
     @Column(nullable = false)
     private String name;
 
     private String unit = "EA";
 
+    @Min(0)
     private int quantity = 0;
+    @Min(0)
     private int minQty = 0;
+    @Min(0)
     private int maxQty = 0;
 
     @jakarta.persistence.Version

@@ -66,6 +66,26 @@ class ScanApiControllerTest {
     }
 
     @Test
+    void 빈코드_제품_400_검증() {
+        ResponseEntity<String> r = postJson("/api/products", "{\"code\":\"\",\"name\":\"n\",\"quantity\":1}");
+        assertEquals(HttpStatus.BAD_REQUEST, r.getStatusCode(), "빈 코드는 저장 거부");
+        assertTrue(r.getBody().contains("error.validation"), "검증 코드: " + r.getBody());
+    }
+
+    @Test
+    void 음수_재고_제품_400_검증() {
+        ResponseEntity<String> r = postJson("/api/products", "{\"code\":\"NEG1\",\"name\":\"n\",\"quantity\":-5}");
+        assertEquals(HttpStatus.BAD_REQUEST, r.getStatusCode(), "음수 재고는 저장 거부");
+    }
+
+    @Test
+    void 음수_수량_이동_400_검증() {
+        postJson("/api/products", "{\"code\":\"MV1\",\"name\":\"n\",\"quantity\":10}");
+        ResponseEntity<String> r = postJson("/api/inventory/move", "{\"code\":\"MV1\",\"type\":\"OUT\",\"qty\":-3}");
+        assertEquals(HttpStatus.BAD_REQUEST, r.getStatusCode(), "음수 수량 이동 거부");
+    }
+
+    @Test
     void 미등록_조회_404() {
         ResponseEntity<String> r = auth().getForEntity("/api/scan/lookup?code=NOPE", String.class);
         assertEquals(HttpStatus.NOT_FOUND, r.getStatusCode());
