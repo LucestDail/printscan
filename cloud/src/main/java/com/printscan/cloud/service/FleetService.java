@@ -90,7 +90,7 @@ public class FleetService {
     @Transactional(readOnly = true)
     public Device authDevice(String token) {
         return devices.findByDeviceToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("잘못된 deviceToken"));
+                .orElseThrow(() -> new com.printscan.cloud.web.DeviceAuthException("error.deviceAuth"));
     }
 
     // ── org-key 로테이션 ──

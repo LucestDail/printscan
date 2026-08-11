@@ -9,6 +9,7 @@ import com.printscan.edge.label.RenderRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
@@ -107,6 +108,30 @@ class CloudSyncClientContractTest {
         ArgumentCaptor<PrintedJob> cap = ArgumentCaptor.forClass(PrintedJob.class);
         verify(printedJobs).save(cap.capture());                        // 인쇄 확정 기록(멱등키)
         org.junit.jupiter.api.Assertions.assertEquals(11L, cap.getValue().getJobId());
+        server.verify();
+    }
+
+    @Test
+    void 토큰거부_401시_신원폐기하고_다음주기_재등록() {
+        seedToken();
+        client.init();  // 토큰 TOK-1 로드
+
+        // 모든 기대를 선언순서로 미리 등록(요청 실행 후 추가 불가). 동일 URI 는 선언순서로 매칭.
+        server.expect(requestTo("http://hub.local/api/device/jobs/next"))
+              .andRespond(withStatus(HttpStatus.UNAUTHORIZED));                      // 1차 폴링 → 401
+        server.expect(requestTo("http://hub.local/api/device/register"))
+              .andExpect(method(org.springframework.http.HttpMethod.POST))
+              .andRespond(withSuccess("{\"deviceToken\":\"TOK-2\",\"deviceId\":9}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("http://hub.local/api/device/jobs/next"))
+              .andRespond(withStatus(HttpStatus.NO_CONTENT));                        // 2차 폴링(재등록 후) → 잡 없음
+
+        client.pollJobs();   // 401 → 신원 폐기(token=null)
+        client.pollJobs();   // token null → 재등록 후 정상 폴링
+
+        verify(identityRepo).deleteById(1L);   // 로컬 신원 폐기
+        ArgumentCaptor<DeviceIdentity> cap = ArgumentCaptor.forClass(DeviceIdentity.class);
+        verify(identityRepo).save(cap.capture());
+        org.junit.jupiter.api.Assertions.assertEquals("TOK-2", cap.getValue().getDeviceToken(), "새 토큰으로 재등록");
         server.verify();
     }
 

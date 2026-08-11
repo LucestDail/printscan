@@ -23,6 +23,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", msg, "code", e.getCode()));
     }
 
+    /** 디바이스 토큰 인증 실패 → 401(edge 가 토큰 폐기 감지 후 재등록). */
+    @ExceptionHandler(DeviceAuthException.class)
+    public ResponseEntity<Map<String, String>> deviceAuth(DeviceAuthException e) {
+        String msg = messages.getMessage(e.getCode(), null, e.getCode(), LocaleContextHolder.getLocale());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", msg, "code", e.getCode()));
+    }
+
     /** 미이관 IllegalArgument 등 → 일반 로케일 메시지(원시 한국어 노출 안 함). */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> illegal(IllegalArgumentException e) {

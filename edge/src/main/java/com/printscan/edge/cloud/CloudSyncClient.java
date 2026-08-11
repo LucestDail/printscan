@@ -19,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -151,9 +152,18 @@ public class CloudSyncClient {
                     .header("X-Device-Token", token)
                     .body(Map.of("ok", ok, "message", msg == null ? "" : msg))
                     .retrieve().toBodilessEntity();
+        } catch (HttpClientErrorException.Unauthorized e) {
+            onTokenRejected();
         } catch (Exception e) {
             log.debug("[cloud-sync] 폴링 스킵: {}", e.getMessage());
         }
+    }
+
+    /** 허브가 토큰을 거부(401) → 디바이스가 삭제/무효화됨. 로컬 신원 폐기 → 다음 주기에 재등록. */
+    private void onTokenRejected() {
+        log.warn("[cloud-sync] 디바이스 토큰 거부(401) → 신원 폐기, 재등록 예약");
+        token = null; deviceId = null;
+        try { identityRepo.deleteById(1L); } catch (Exception ignore) { /* 이미 없음 */ }
     }
 
     /** 중앙 템플릿 동기화 — 허브의 org 템플릿을 로컬 LabelTemplate 로 upsert(cloudId 기준). */
@@ -177,6 +187,8 @@ public class CloudSyncClient {
                 templates.save(t);
             }
             log.debug("[cloud-sync] 템플릿 {}건 동기화", list.size());
+        } catch (HttpClientErrorException.Unauthorized e) {
+            onTokenRejected();
         } catch (Exception e) {
             log.debug("[cloud-sync] 템플릿 동기화 스킵: {}", e.getMessage());
         }
@@ -192,6 +204,8 @@ public class CloudSyncClient {
                     .header("X-Device-Token", token)
                     .body(Map.of("printerMode", printer.getMode(), "line", line.getName(), "inventory", inv))
                     .retrieve().toBodilessEntity();
+        } catch (HttpClientErrorException.Unauthorized e) {
+            onTokenRejected();
         } catch (Exception e) {
             log.debug("[cloud-sync] 하트비트 스킵: {}", e.getMessage());
         }

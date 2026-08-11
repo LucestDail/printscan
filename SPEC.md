@@ -245,6 +245,7 @@ QUEUED ──(edge GET /jobs/next: 원자 claim)──▶ SENT ──(edge 인�
 - **소비 업싱크**: 재고 OUT 이벤트를 `AFTER_COMMIT` @Async 로 허브 `/consume` 전송(인쇄/DB 경로 비블로킹).
 - **템플릿 동기화**(30s): 허브 조직 템플릿을 로컬 `LabelTemplate`에 `cloudId` 기준 upsert.
 - **타임아웃**: edge RestClient 연결2s/읽기5s(반쯤 열린 TCP가 스케줄러 스레드 블록 방지).
+- **토큰 무효화 복구**: 허브가 디바이스 토큰을 거부(**401** `error.deviceAuth` — 디바이스 삭제/DB 리셋 등)하면 edge가 로컬 신원(`device_identity`)을 폐기하고 다음 주기에 **자동 재등록**. 죽은 토큰으로 무한 폴링하는 상태 방지.
 
 **시퀀스 — 등록 → 원격 인쇄 → ack (아웃바운드 폴링)**
 ```mermaid

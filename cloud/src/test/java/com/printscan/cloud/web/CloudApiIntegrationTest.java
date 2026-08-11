@@ -127,6 +127,13 @@ class CloudApiIntegrationTest {
     }
 
     @Test
+    void 잘못된_디바이스토큰_401() {
+        ResponseEntity<String> r = rest.exchange("/api/device/jobs/next", HttpMethod.GET,
+                jsonWithToken("", "__bad_token__"), String.class);
+        assertEquals(HttpStatus.UNAUTHORIZED, r.getStatusCode(), "무효 토큰은 401(edge 재등록 신호)");
+    }
+
+    @Test
     void 관리_stats_단일org_폴백() {
         register("ORG-DEMO-KEY");
         ResponseEntity<String> r = rest.getForEntity("/api/admin/stats", String.class);
