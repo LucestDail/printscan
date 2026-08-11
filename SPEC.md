@@ -348,7 +348,11 @@ sequenceDiagram
 ## 12. 관측성·백업·알림
 
 - **헬스**(`/actuator/health`): 실동작 컴포넌트 `printer`(mode별 실도달성 — cups=서비스 탐색, network=소켓, rawdev=파일존재), `cloud`(허브 최근 접촉), `db`, `diskSpace`. 컴포넌트 DOWN 시 503.
-- **메트릭**: `/actuator/prometheus`(micrometer).
+- **메트릭**: `/actuator/prometheus`(micrometer). JVM/HTTP 기본 + **도메인 카운터**(Grafana 대시보드용):
+  - `printscan_labels_printed_total{line}` (edge) — 실 인쇄 라벨 수(라인 태그)
+  - `printscan_jobs_enqueued_total` (cloud) — 원격 인쇄 지시 수
+  - `printscan_jobs_completed_total{result=done|failed}` (cloud) — 잡 완료(성공/실패)
+  - `printscan_consumption_total` (cloud) — 소비(출고) 수량 누계
 - **알림**(`AlertService`, webhook + WARN 로그, 5분 dedup): 저재고 / 프린터 미발견 / 백업 실패 / 디바이스 오프라인. `PRINTSCAN_ALERT_WEBHOOK`(ntfy/Slack 호환) 미설정 시 로그만.
 - **백업**: edge H2 매일 03:00, cloud 03:30 `BACKUP TO data/backup/*.zip`(H2만; Postgres는 pg_dump 별도). 복원 `deploy/restore.sh`.
 

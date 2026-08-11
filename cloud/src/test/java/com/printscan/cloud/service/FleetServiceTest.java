@@ -23,7 +23,7 @@ class FleetServiceTest {
     @Autowired TestEntityManager em;
 
     @Autowired com.printscan.cloud.domain.CloudTemplateRepository tpls;
-    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons, tpls, new AlertService(""), new OrgKeyResolver(orgs)); }
+    private FleetService svc() { return new FleetService(orgs, devices, jobs, snaps, cons, tpls, new AlertService(""), new OrgKeyResolver(orgs), new io.micrometer.core.instrument.simple.SimpleMeterRegistry()); }
 
     private Device device() { return device("K"); }
 
@@ -76,6 +76,22 @@ class FleetServiceTest {
         // B 는 A 의 장비를 볼 수 없음
         assertTrue(s.allDevices(b.getId()).isEmpty());
         assertEquals(1, s.allDevices(a.getOrgId()).size());
+    }
+
+    @Test
+    void 메트릭_카운터_증가() {
+        io.micrometer.core.instrument.simple.SimpleMeterRegistry reg = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        FleetService s = new FleetService(orgs, devices, jobs, snaps, cons, tpls, new AlertService(""), new OrgKeyResolver(orgs), reg);
+        Device d = device();
+        s.enqueuePrint(d.getOrgId(), d.getId(), 40, 25, 203, "[]", "{}", 1, null, null, null, null, null);
+        assertEquals(1.0, reg.counter("printscan.jobs.enqueued").count(), "enqueue 카운터 +1");
+
+        s.recordConsumption(d, "X", 5, "op", "L", true);
+        assertEquals(5.0, reg.counter("printscan.consumption").count(), "소비 카운터 +qty");
+
+        PrintJobCloud j = s.pollNext(d);           // QUEUED→SENT
+        s.ack(d, j.getId(), true, "ok");           // →DONE
+        assertEquals(1.0, reg.counter("printscan.jobs.completed", "result", "done").count(), "완료(done) 카운터 +1");
     }
 
     @Test

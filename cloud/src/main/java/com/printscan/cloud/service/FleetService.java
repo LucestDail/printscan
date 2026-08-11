@@ -2,6 +2,7 @@ package com.printscan.cloud.service;
 
 import com.printscan.cloud.domain.*;
 import com.printscan.cloud.web.ApiException;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class FleetService {
     private final CloudTemplateRepository templates;
     private final AlertService alerts;
     private final OrgKeyResolver keyResolver;
+    private final MeterRegistry meterRegistry;   // 잡/소비 카운터(Prometheus)
 
     // ── 중앙 템플릿(테넌트 스코프) ──
     @Transactional(readOnly = true)
@@ -159,6 +161,7 @@ public class FleetService {
         job.setDoneAt(LocalDateTime.now());
         jobs.save(job);
         if (ok) devices.incrementPrintCount(d.getId()); // 원자 증가
+        meterRegistry.counter("printscan.jobs.completed", "result", ok ? "done" : "failed").increment();
         log.info("[fleet] job {} ack={} ({})", jobId, ok, message);
     }
 
@@ -215,7 +218,9 @@ public class FleetService {
         job.setSerialStart(serialStart);
         job.setSerialCount(serialCount);
         job.setSerialPad(serialPad);
-        return jobs.save(job);
+        PrintJobCloud saved = jobs.save(job);
+        meterRegistry.counter("printscan.jobs.enqueued").increment();
+        return saved;
     }
 
     // ── 조회/집계 (전부 org 스코프 — 테넌트 격리) ──
@@ -240,6 +245,7 @@ public class FleetService {
         c.setQty(qty);
         c.setFromPrint(fromPrint);
         consumptions.save(c);
+        if (qty > 0) meterRegistry.counter("printscan.consumption").increment(qty);
     }
 
     @Transactional(readOnly = true)

@@ -6,6 +6,7 @@ import com.printscan.edge.inventory.InventoryService;
 import com.printscan.edge.label.raster.LabelRasterizer;
 import com.printscan.edge.label.raster.ZplGraphicEncoder;
 import com.printscan.edge.print.PrintService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class LabelService {
     private final InventoryService inventory;
     private final LineProperties lineProps;
     private final PrinterProperties printerProps;
+    private final MeterRegistry meterRegistry;   // 인쇄 카운터(Prometheus)
 
     // ── CRUD ──────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -116,6 +118,7 @@ public class LabelService {
         BufferedImage img = render(req);
         String zpl = ZplGraphicEncoder.wrapLabel(img, copies, printerProps.getDarkness(), printerProps.getSpeed());
         printService.print(zpl);
+        meterRegistry.counter("printscan.labels.printed", "line", lineProps.getName()).increment(copies);
         log.info("[label] 인쇄: {}x{}px copies={}", img.getWidth(), img.getHeight(), copies);
     }
 
