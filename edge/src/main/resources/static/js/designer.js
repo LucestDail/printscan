@@ -227,8 +227,8 @@ async function doPreview() {
 
 async function doPrint() {
   try { const res = await fetch('/api/labels/print', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(req()) });
-    const msg = await res.text(); toast(res.ok ? msg : ('인쇄 실패: ' + msg)); }
-  catch (e) { toast('인쇄 오류: ' + e.message); }
+    const msg = await res.text(); toast(res.ok ? msg : t('designer.t.printFail', [msg])); }
+  catch (e) { toast(t('designer.t.printError', [e.message])); }
 }
 
 // ── 템플릿 CRUD ──────────────────────────────

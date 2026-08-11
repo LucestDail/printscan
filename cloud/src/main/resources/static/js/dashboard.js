@@ -85,7 +85,7 @@ async function netPrint() {
 async function addTpl() {
   const body = { name: $('tplName').value || 'template', widthMm: 40, heightMm: 25, dpi: 203, elementsJson: $('tplElements').value || '[]' };
   const res = await adminFetch('/api/admin/templates', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if (res.ok) { $('tplName').value=''; $('tplElements').value=''; refresh(); } else toast('추가 실패');
+  if (res.ok) { $('tplName').value=''; $('tplElements').value=''; refresh(); } else toast(t('tpl.addFail'));
 }
 window.delTpl = async (id) => { await adminFetch('/api/admin/templates/'+id, {method:'DELETE'}); refresh(); };
 

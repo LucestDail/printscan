@@ -141,7 +141,7 @@ sudo bash deploy/restore.sh <backup.zip> printscan-edge /opt/printscan-edge/data
 | P4 | **실 Pi+Zebra 인쇄 스모크** | ⏳ 하드웨어 | `acceptance-test.sh --print` 로 실물 확인 |
 | P5 | 라벨 미디어 실측·캘리브 | ⏳ 현장 | §5 체크리스트 |
 | P6 | 골든 SD 이미지 1개 제작 | ⏳ 하드웨어 | §3-A, Pi 1대로 30분 |
-| P7 | 3D 케이스 도면·출력 | ⏳ 기구 | 별도 |
+| P7 | 3D 케이스 도면·출력 | ⏳ 기구(요구사항 명세 완료) | [`deploy/CASE-SPEC.md`](deploy/CASE-SPEC.md), CAD/STL은 별도 |
 | P8 | 공장장 PC 허브 설치 | ⏳ 현장 | README-HUB A안 |
 | P9 | 파일럿 계약/설치 일정 | ⏳ 영업 | — |
 

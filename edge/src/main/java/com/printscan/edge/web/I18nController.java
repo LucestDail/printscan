@@ -30,7 +30,8 @@ public class I18nController {
             "designer.selectEl", "designer.varsNote", "designer.savedTpl",
             "designer.t.jsonErr", "designer.t.batchFail", "designer.t.previewFail", "designer.t.unnamed",
             "designer.t.loadFail", "designer.t.saveFail", "designer.t.saved",
-            "designer.t.confirmDel", "designer.t.delFail", "designer.t.deleted"
+            "designer.t.confirmDel", "designer.t.delFail", "designer.t.deleted",
+            "designer.t.printFail", "designer.t.printError"
     );
 
     @GetMapping("/api/i18n/{lang}.json")
