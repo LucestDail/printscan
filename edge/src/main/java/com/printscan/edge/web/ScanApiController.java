@@ -25,9 +25,9 @@ public class ScanApiController {
     public List<Product> products() { return service.findAll(); }
 
     @PostMapping("/products")
-    public ResponseEntity<?> createProduct(@RequestBody Product p) {
-        try { return ResponseEntity.ok(service.save(p)); }
-        catch (IllegalArgumentException e) { return ResponseEntity.badRequest().body(Map.of("error", e.getMessage())); }
+    public Product createProduct(@RequestBody Product p) {
+        // 예외는 GlobalExceptionHandler 가 요청 로케일로 번역(자체 catch 금지 — 원시 코드 노출 방지).
+        return service.save(p);
     }
 
     @DeleteMapping("/products/{id}")
@@ -46,15 +46,11 @@ public class ScanApiController {
 
     // ── 입출고 ──
     @PostMapping("/inventory/move")
-    public ResponseEntity<?> move(@RequestBody MoveRequest req) {
-        try {
-            InventoryMovement.Type t = InventoryMovement.Type.valueOf(req.type().toUpperCase());
-            InventoryMovement m = service.move(req.code().trim(), t, req.qty(),
-                    req.note(), req.operator(), lineProps.getName(), false);
-            return ResponseEntity.ok(m);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public InventoryMovement move(@RequestBody MoveRequest req) {
+        // 잘못된 type → enum valueOf 가 IllegalArgumentException → 핸들러가 error.badRequest 로 번역.
+        InventoryMovement.Type t = InventoryMovement.Type.valueOf(req.type().toUpperCase());
+        return service.move(req.code().trim(), t, req.qty(),
+                req.note(), req.operator(), lineProps.getName(), false);
     }
 
     @GetMapping("/inventory/history")
