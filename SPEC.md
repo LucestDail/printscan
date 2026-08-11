@@ -246,6 +246,31 @@ QUEUED ──(edge GET /jobs/next: 원자 claim)──▶ SENT ──(edge 인�
 - **템플릿 동기화**(30s): 허브 조직 템플릿을 로컬 `LabelTemplate`에 `cloudId` 기준 upsert.
 - **타임아웃**: edge RestClient 연결2s/읽기5s(반쯤 열린 TCP가 스케줄러 스레드 블록 방지).
 
+**시퀀스 — 등록 → 원격 인쇄 → ack (아웃바운드 폴링)**
+```mermaid
+sequenceDiagram
+    participant A as 관리자(대시보드)
+    participant H as 허브 cloud(8092)
+    participant E as edge(Pi, 8091)
+    participant Z as Zebra
+    Note over E,H: 부팅 시 1회
+    E->>H: POST /api/device/register {orgApiKey}
+    H-->>E: {deviceId, deviceToken}  (로컬 영속)
+    A->>H: POST /api/admin/devices/{id}/print  (잡 QUEUED)
+    loop 폴링 2s
+        E->>H: GET /api/device/jobs/next (X-Device-Token)
+        H-->>E: 잡(원자 claim → SENT) | 204
+    end
+    alt 신규 잡
+        E->>Z: ^GFA 인쇄
+        E->>E: PrintedJob 기록(멱등키)
+        E->>H: POST /jobs/{id}/ack {ok:true} → DONE
+    else 이미 인쇄한 잡(재전달)
+        E->>H: POST /jobs/{id}/ack (재인쇄 없이 ack만)
+    end
+    Note over H: SENT 60s+ 정체 → 리퍼(30s) 재큐(QUEUED)
+```
+
 ---
 
 ## 8. 소비 추적
@@ -253,6 +278,22 @@ QUEUED ──(edge GET /jobs/next: 원자 claim)──▶ SENT ──(edge 인�
 - **인쇄 = 자동 출고**: `LabelService.print/printBatch` 는 `variables.code` 가 등록 제품이면 인쇄 매수만큼 `consumeForPrint`(원자 차감, 0 클램프 — 인쇄는 막지 않음) → `InventoryMovement(OUT, fromPrint=true, operator, line)`.
 - **배치**: 라벨 1장마다 소비 기록 → 중간 실패해도 실제 인쇄분과 일치(드리프트 없음).
 - **집계**(허브): `ConsumptionLog` 를 **라인별/작업자별/제품별**로 SQL 집계 → 대시보드.
+
+**시퀀스 — 인쇄 = 자동 출고 → 허브 집계**
+```mermaid
+sequenceDiagram
+    participant U as 작업자
+    participant E as edge(LabelService)
+    participant I as 재고(InventoryService)
+    participant H as 허브 cloud
+    U->>E: 인쇄 요청 (라벨에 {{code}}, operator)
+    E->>E: ^GFA 인쇄 (copies 장)
+    E->>I: consumeForPrint(code, copies, operator, line)  (원자 차감·0클램프)
+    I->>I: InventoryMovement(OUT, fromPrint=true)
+    Note over I,H: AFTER_COMMIT @Async (인쇄/DB 비블로킹)
+    I->>H: POST /api/device/consume {code, qty, operator, line}
+    H->>H: ConsumptionLog 적재 → 라인/작업자/제품 집계
+```
 
 ---
 
@@ -262,6 +303,23 @@ QUEUED ──(edge GET /jobs/next: 원자 claim)──▶ SENT ──(edge 인�
 - **키 해석**(`OrgKeyResolver`, 단일 소스): 현재 키 우선, 없으면 **유예기간 내 직전 키** 허용. 로그인·헤더·디바이스 등록 전 경로 통일.
 - **로테이션**(`rotateOrgKey(orgId, graceMinutes)`): SecureRandom URL-safe 신규 키 발급, 직전 키를 `graceMinutes`(0=즉시폐기, 최대7일) 동안 유효 유지 → **무중단 교체**. `keyRotatedAt` 감사 기록.
 - **즉시 폐기**(`revokePreviousKey`): 유출 시 직전 키 즉시 무효.
+
+**시퀀스 — org-key 무중단 로테이션**
+```mermaid
+sequenceDiagram
+    participant A as 관리자
+    participant H as 허브 cloud
+    participant E as edge 유닛들
+    A->>H: POST /api/admin/org/rotate-key {graceMinutes:60}
+    H->>H: previousApiKey=기존, apiKey=신규(SecureRandom), 만료=now+60m
+    H-->>A: {apiKey: 신규}
+    Note over E,H: 유예 60분 — 신규/직전 키 모두 유효(무중단)
+    A->>E: provision-edge.sh --org-key 신규  (순차 갱신)
+    opt 유출 대응
+        A->>H: POST /api/admin/org/revoke-previous-key
+        H->>H: 직전 키 즉시 무효
+    end
+```
 
 ---
 

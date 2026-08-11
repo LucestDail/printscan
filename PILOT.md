@@ -52,6 +52,8 @@
 
 현재는 유닛마다 `scp + install-edge.sh` 수동. 파일럿(수 대)까진 이대로도 되나, **리세일 규모엔 골든 이미지가 필수.** 두 경로:
 
+> 실행 절차서: [`deploy/README-IMAGE.md`](deploy/README-IMAGE.md)(굽기 전 초기화 체크리스트 포함). 현장 장애 대응: [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md).
+
 ### 3-A. 골든 이미지 (권장, 파일럿에 적합)
 1. Pi 1대에 Raspberry Pi OS Lite(64-bit) 설치.
 2. `install-edge.sh <app.jar> USB` 실행 → java/cups/폰트/raw큐/systemd 구성.

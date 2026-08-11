@@ -109,6 +109,8 @@
 | [`PLAN-V2.md`](PLAN-V2.md) | v2 아키텍처/구현 로드맵 |
 | [`PILOT.md`](PILOT.md) | 실기계 파일럿 준비(BOM·이미지화·설치·수용검사·punch-list) |
 | [`deploy/README-PI.md`](deploy/README-PI.md) · [`deploy/README-HUB.md`](deploy/README-HUB.md) | Pi·허브 설치 가이드 |
+| [`deploy/README-IMAGE.md`](deploy/README-IMAGE.md) | 골든 SD 이미지 제작·복제(대량 배포) |
+| [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md) | **운영 Runbook** — 현장/지원 장애 대응(증상→진단→조치) |
 | [`REVIEW-2026-08-08.md`](REVIEW-2026-08-08.md) | 종합 검토 기록 |
 
 > 저장소: github.com/LucestDail/printscan · 라이선스: 사내/리세일(별도 명시 전까지 비공개).
