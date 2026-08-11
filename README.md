@@ -111,6 +111,7 @@
 | [`deploy/README-PI.md`](deploy/README-PI.md) · [`deploy/README-HUB.md`](deploy/README-HUB.md) | Pi·허브 설치 가이드 |
 | [`deploy/README-IMAGE.md`](deploy/README-IMAGE.md) | 골든 SD 이미지 제작·복제(대량 배포) |
 | [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md) | **운영 Runbook** — 현장/지원 장애 대응(증상→진단→조치) |
+| [`deploy/OBSERVABILITY.md`](deploy/OBSERVABILITY.md) · [`deploy/grafana-dashboard.json`](deploy/grafana-dashboard.json) | Prometheus 스크레이프·메트릭 카탈로그·PromQL + Grafana 대시보드 |
 | [`deploy/CASE-SPEC.md`](deploy/CASE-SPEC.md) | 라인 유닛 3D 케이스 요구사항 명세 |
 | [`REVIEW-2026-08-08.md`](REVIEW-2026-08-08.md) | 종합 검토 기록 |
 

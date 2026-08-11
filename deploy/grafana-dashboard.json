@@ -1,0 +1,118 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "printscan edge/cloud 를 스크레이프하는 Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
+  ],
+  "title": "printscan — 라벨 어플라이언스",
+  "uid": "printscan-appliance",
+  "tags": ["printscan"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "누적 인쇄 라벨",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "targets": [
+        { "refId": "A", "expr": "sum(printscan_labels_printed_total)", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "잡 성공률 (1h)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(printscan_jobs_completed_total{result=\"done\"}[1h])) / clamp_min(sum(increase(printscan_jobs_enqueued_total[1h])), 1)", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "실패 잡 (10m)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(printscan_jobs_completed_total{result=\"failed\"}[10m]))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "온라인 유닛",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "targets": [
+        { "refId": "A", "expr": "sum(up{job=\"printscan-edge\"})", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "라인별 인쇄량 (장/분)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (line) (rate(printscan_labels_printed_total[5m])) * 60", "legendFormat": "{{line}}", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "원격 잡 — 지시 vs 완료",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(printscan_jobs_enqueued_total[5m])) * 60", "legendFormat": "enqueued", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } },
+        { "refId": "B", "expr": "sum by (result) (rate(printscan_jobs_completed_total[5m])) * 60", "legendFormat": "{{result}}", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "소비(출고) 추이 (수량/분)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 40 } } },
+      "targets": [
+        { "refId": "A", "expr": "rate(printscan_consumption_total[5m]) * 60", "legendFormat": "consumption", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "HTTP 요청률 (모듈별)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (job) (rate(http_server_requests_seconds_count[5m]))", "legendFormat": "{{job}}", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }
+      ]
+    }
+  ]
+}
