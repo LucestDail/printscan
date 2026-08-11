@@ -36,6 +36,7 @@ public class FleetService {
 
     @Transactional
     public CloudTemplate saveTemplate(Long orgId, CloudTemplate t) {
+        if (t.getName() == null || t.getName().isBlank()) throw new ApiException("error.templateName");
         if (t.getId() != null) {
             CloudTemplate ex = templates.findById(t.getId())
                     .orElseThrow(() -> new ApiException("error.templateNotFound"));

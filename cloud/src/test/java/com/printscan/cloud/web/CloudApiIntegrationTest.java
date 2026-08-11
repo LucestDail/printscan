@@ -103,6 +103,30 @@ class CloudApiIntegrationTest {
     }
 
     @Test
+    void 음수매수_또는_0치수_400() {
+        Long deviceId = ((Number) register("ORG-DEMO-KEY").get("deviceId")).longValue();
+        // 음수 매수
+        assertEquals(HttpStatus.BAD_REQUEST, rest.exchange("/api/admin/devices/" + deviceId + "/print",
+                HttpMethod.POST,
+                json("{\"widthMm\":40,\"heightMm\":25,\"dpi\":203,\"elementsJson\":\"[]\",\"variables\":{},\"copies\":-3}"),
+                String.class).getStatusCode());
+        // 0 치수
+        assertEquals(HttpStatus.BAD_REQUEST, rest.exchange("/api/admin/devices/" + deviceId + "/print",
+                HttpMethod.POST,
+                json("{\"widthMm\":0,\"heightMm\":25,\"dpi\":203,\"elementsJson\":\"[]\",\"variables\":{},\"copies\":1}"),
+                String.class).getStatusCode());
+    }
+
+    @Test
+    void 빈이름_템플릿_400() {
+        ResponseEntity<String> r = rest.exchange("/api/admin/templates", HttpMethod.POST,
+                json("{\"name\":\"\",\"widthMm\":40,\"heightMm\":25,\"dpi\":203,\"elementsJson\":\"[]\"}"),
+                String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, r.getStatusCode());
+        assertFalse(r.getBody().contains("\"error\":\"error.templateName\""), "error 필드는 번역되어야");
+    }
+
+    @Test
     void 관리_stats_단일org_폴백() {
         register("ORG-DEMO-KEY");
         ResponseEntity<String> r = rest.getForEntity("/api/admin/stats", String.class);

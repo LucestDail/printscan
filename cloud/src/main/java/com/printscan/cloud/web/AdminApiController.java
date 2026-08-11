@@ -59,6 +59,8 @@ public class AdminApiController {
     @PostMapping("/devices/{id}/print")
     public PrintJobCloud print(HttpServletRequest req, @PathVariable Long id, @RequestBody NetworkPrintRequest r) throws Exception {
         Long orgId = org(req);
+        if (r.widthMm() <= 0 || r.heightMm() <= 0 || (r.copies() != null && r.copies() < 1))
+            throw new ApiException("error.printParams");   // 치수·매수 하한(음수/0 방지)
         if (r.copies() != null && r.copies() > 1000) throw new ApiException("error.copiesMax", 1000);
         if (r.serialCount() != null && (r.serialCount() < 0 || r.serialCount() > 5000))
             throw new ApiException("error.serialMax", 5000);
